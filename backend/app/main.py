@@ -14,7 +14,7 @@ load_dotenv()
 app = FastAPI()
 
 # Get allowed origins from environment variable
-allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "https://https://flashcard-maker-lyart.vercel.app/").split(",")
 
 # Configure CORS
 app.add_middleware(
