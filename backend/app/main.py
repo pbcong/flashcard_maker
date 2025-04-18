@@ -1,78 +1,39 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, status, Header
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List
+from fastapi.security import OAuth2PasswordRequestForm
+from typing import List, Optional
 import os
 from dotenv import load_dotenv
 from openai import OpenAI
 import base64
 import json
-from .models import Flashcard, FlashcardResponse
+from datetime import datetime
+from supabase import create_client, Client
+from .models import Token, User, Flashcard, FlashcardSet, FlashcardResponse, Register
+from .prompts import TRANSCRIPT_PROMPT, FLASHCARD_PROMPT
 
-# Load environment variables
 load_dotenv()
+
+
+supabase: Client = create_client(
+    os.getenv("SUPABASE_URL"),
+    os.getenv("SUPABASE_SERVICE_KEY")
+)
 
 app = FastAPI()
 
-# Get allowed origins from environment variable
 allowed_origins = os.getenv("ALLOWED_ORIGINS", "https://flashcard-maker-lyart.vercel.app,http://localhost:5173").split(",")
 
-# Configure CORS - make sure to properly set up the middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS"],  # Added OPTIONS which is crucial for CORS preflight
+    allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["Content-Type", "Content-Length"],  # Expose necessary headers
+    expose_headers=["*"],
 )
 
-# Initialize OpenAI client
 client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
-
-# Transcription prompt
-TRANSCRIPT_PROMPT = """You will be given an image containing text in various languages. Your task is to transcribe all the content in the image accurately.
-
-Please follow these instructions carefully:
-
-1. Examine the image closely and identify all text present.
-
-2. The text in the image may be in Vietnamese, Chinese, or English. Be prepared to recognize and transcribe text in any of these languages.
-
-3. Transcribe all the text you see in the image, regardless of its language. Do not translate the text; transcribe it in its original language.
-
-4. Maintain the original formatting of the text as much as possible. This includes:
-   - Preserving line breaks
-   - Keeping text in the same order as it appears in the image
-   - Noting any special formatting (e.g., bold, italic, underlined) if it's significant
-
-5. If there are any symbols, numbers, or punctuation marks in the image, include them in your transcription.
-
-6. If any part of the text is unclear or illegible, indicate this by writing [unclear] in place of the unreadable text.
-
-7. Do not include any interpretation or analysis of the text; simply transcribe what you see.
-
-8. Enclose your entire transcription within <transcription> tags.
-
-Please proceed with the transcription based on the provided image."""
-
-# Flashcard prompt template
-FLASHCARD_PROMPT = '''You are an expert in creating Chinese language learning flashcards. Your task is to generate flashcards from the given Chinese content and output them in JSON format. Here's the content you'll be working with:
-
-<chinese_content>
-{CONTENT}
-</chinese_content>
-
-Create the flashcards following these guidelines:
-
-1. For each flashcard:
-   - Set the "front" field to contain only the Chinese characters.
-   - Set the "back" field to contain the Pinyin followed by the English meaning, separated by a dash (-).
-2. Ensure each flashcard represents a single, clear idea or concept.
-3. Format your output as a JSON array of objects. Each object should have two fields:
-   - "front": The Chinese characters
-   - "back": The Pinyin and English meaning
-
-Your entire output must be valid JSON. Do not include any additional text, explanations, or commentary outside of the JSON structure.'''
 
 def image_to_base64(image_bytes):
     return base64.b64encode(image_bytes).decode("utf-8")
@@ -112,48 +73,248 @@ def make_flashcard_prompt(content):
         ],
     }
 
-@app.post("/upload", response_model=FlashcardResponse)
-async def upload_images(files: List[UploadFile] = File(...)):
+async def get_current_user(authorization: str = Header(...)):
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authentication scheme")
+    token = authorization.split(" ")[1]
     try:
-        # Read all uploaded images
+        res = supabase.auth.get_user(token)
+        usr = res.user
+        return User(id=usr.id, username=usr.user_metadata.get('username', ''))
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+
+@app.post("/token", response_model=Token)
+async def login_for_access_token(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+):
+    try:
+        resp = supabase.auth.sign_in_with_password({
+            "email": form_data.username,
+            "password": form_data.password
+        })
+        
+        # Check for error in response
+        if hasattr(resp, 'error') and resp.error:
+            error_msg = getattr(resp.error, 'message', 'Invalid credentials')
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=error_msg)
+        
+        session = resp.session
+        if not session or not session.access_token:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="No session returned")
+        
+        return {"access_token": session.access_token, "token_type": "bearer"}
+    except Exception as e:
+        # Log the actual exception for debugging
+        print(f"Login error: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Login failed: {str(e)}")
+
+@app.get("/users/me", response_model=User) # Use imported User
+async def read_users_me(current_user: User = Depends(get_current_user)): # Use imported User
+    return current_user
+
+@app.post("/register") # No response model needed here usually
+async def register_user(data: Register): # Use imported Register
+    try:
+        # The updated Supabase syntax for sign_up
+        resp = supabase.auth.sign_up({
+            "email": data.email,
+            "password": data.password,
+            "options": {
+                "data": {
+                    "username": data.username
+                }
+            }
+        })
+        
+        if resp.user:
+            return {"message": "User registered. Please check email to confirm."}
+        else:
+            err = getattr(resp, 'error', None)
+            detail = err.message if err else 'Registration failed'
+            raise HTTPException(status_code=400, detail=detail)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/upload", response_model=FlashcardResponse) # Use imported FlashcardResponse
+async def upload_images(
+    files: List[UploadFile] = File(...),
+    current_user: User = Depends(get_current_user) # Use imported User
+):
+    try:
+        # Check that files were provided
+        if not files or len(files) == 0:
+            raise HTTPException(status_code=400, detail="No files were uploaded")
+        
+        # Read all uploaded images with error handling
         images = []
         for file in files:
-            content = await file.read()
-            images.append(content)
+            try:
+                # Check if the file is an image
+                content_type = file.content_type
+                if not content_type or not content_type.startswith('image/'):
+                    raise ValueError(f"File {file.filename} is not an image")
+                
+                # Read file content
+                content = await file.read()
+                if len(content) == 0:
+                    raise ValueError(f"File {file.filename} is empty")
+                
+                images.append(content)
+                print(f"Successfully read image: {file.filename}, size: {len(content)} bytes")
+            except Exception as e:
+                print(f"Error reading file {file.filename}: {str(e)}")
+                raise HTTPException(status_code=400, detail=f"Error processing file {file.filename}: {str(e)}")
+        
+        print(f"Total images processed: {len(images)}")
         
         # Get transcription from OpenAI
-        transcript_prompt = make_transcript_prompt(TRANSCRIPT_PROMPT, images)
-        transcription = client.chat.completions.create(
-            messages=transcript_prompt,
-            model="gpt-4o",
-            max_tokens=1024
-        )
+        try:
+            transcript_prompt = make_transcript_prompt(TRANSCRIPT_PROMPT, images)
+            print("Sending request to OpenAI for transcription")
+            transcription = client.chat.completions.create(
+                messages=transcript_prompt,
+                model="gpt-4o",
+                max_tokens=1024
+            )
+            
+            # Extract transcription content
+            content = transcription.choices[0].message.content
+            print(f"Received transcription: {content[:100]}...")
+        except Exception as e:
+            print(f"OpenAI transcription error: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Error with OpenAI transcription: {str(e)}")
         
-        # Extract transcription content
-        content = transcription.choices[0].message.content
+        # Generate flashcards with error handling
+        try:
+            flashcard_prompt = make_flashcard_prompt(content)
+            flashcards = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[flashcard_prompt],
+                temperature=0.3,
+                max_tokens=1024
+            )
+            
+            # Parse flashcards JSON
+            flashcards_json = flashcards.choices[0].message.content
+            if flashcards_json.startswith('```json'):
+                flashcards_json = flashcards_json[7:-3]  # Remove ```json and ```
+            
+            # Validate JSON
+            try:
+                flashcards_data = json.loads(flashcards_json)
+                print(f"Successfully parsed {len(flashcards_data)} flashcards")
+            except json.JSONDecodeError as e:
+                print(f"JSON parsing error: {str(e)}, content: {flashcards_json[:100]}...")
+                raise HTTPException(status_code=500, detail="Failed to parse flashcards data")
+        except Exception as e:
+            print(f"OpenAI flashcard generation error: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Error generating flashcards: {str(e)}")
         
-        # Generate flashcards
-        flashcard_prompt = make_flashcard_prompt(content)
-        flashcards = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[flashcard_prompt],
-            temperature=0.3,
-        )
+        # Create flashcard set in Supabase
+        set_data = {
+            "title": f"Generated Set {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+            "description": "Automatically generated from images",
+            "owner_id": current_user.id
+        }
         
-        # Parse flashcards JSON
-        flashcards_json = flashcards.choices[0].message.content
-        if flashcards_json.startswith('```json'):
-            flashcards_json = flashcards_json[7:-3]  # Remove ```json and ```
+        set_result = supabase.table('flashcard_sets').insert(set_data).execute()
+        if not set_result.data:
+            raise HTTPException(status_code=500, detail="Failed to create flashcard set")
         
-        # Parse JSON and validate with Pydantic
+        new_set_id = set_result.data[0]['id']
+        
+        # Create flashcards in Supabase
         flashcards_data = json.loads(flashcards_json)
-        flashcards_list = [Flashcard(**card) for card in flashcards_data]
+        cards_to_insert = [
+            {
+                "front": card_data["front"],
+                "back": card_data["back"],
+                "set_id": new_set_id
+            } for card_data in flashcards_data
+        ]
+        
+        cards_result = supabase.table('flashcards').insert(cards_to_insert).execute()
+        if not cards_result.data:
+            # Delete the set if cards insertion fails
+            supabase.table('flashcard_sets').delete().eq('id', new_set_id).execute()
+            raise HTTPException(status_code=500, detail="Failed to create flashcards")
         
         return FlashcardResponse(
             transcription=content,
-            flashcards=flashcards_list
+            flashcards=[Flashcard(**card) for card in flashcards_data] # Use imported Flashcard
         )
         
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
+    except Exception as e:
+        print(f"Unexpected error in upload_images: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
+
+@app.get("/flashcard-sets", response_model=List[FlashcardSet]) # Use imported FlashcardSet
+async def get_flashcard_sets(current_user: User = Depends(get_current_user)): # Use imported User
+    try:
+        # Fetch sets with their flashcards
+        result = supabase.table('flashcard_sets').select(
+            'id, title, description, owner_id, flashcards(id, front, back)'
+        ).eq('owner_id', current_user.id).execute()
+        
+        if not result.data:
+            return []
+            
+        return result.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/flashcard-sets/{set_id}", response_model=FlashcardSet) # Use imported FlashcardSet
+async def get_flashcard_set(
+    set_id: int,
+    current_user: User = Depends(get_current_user) # Use imported User
+):
+    try:
+        # Fetch set with its flashcards
+        result = supabase.table('flashcard_sets').select(
+            'id, title, description, owner_id, flashcards(id, front, back)'
+        ).eq('id', set_id).eq('owner_id', current_user.id).execute()
+        
+        if not result.data:
+            raise HTTPException(status_code=404, detail="Flashcard set not found")
+        
+        return result.data[0]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/flashcard-sets/{set_id}")
+async def delete_flashcard_set(
+    set_id: int,
+    current_user: User = Depends(get_current_user) # Use imported User
+):
+    try:
+        # Delete the set (cascade delete will handle flashcards)
+        result = supabase.table('flashcard_sets').delete().eq('id', set_id).eq('owner_id', current_user.id).execute()
+        
+        if not result.data:
+            raise HTTPException(status_code=404, detail="Flashcard set not found")
+        
+        return {"message": "Flashcard set deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.patch("/flashcard-sets/{set_id}")
+async def update_flashcard_set(
+    set_id: int,
+    data: dict,
+    current_user: User = Depends(get_current_user)
+):
+    try:
+        # Update the set
+        result = supabase.table('flashcard_sets').update(data).eq('id', set_id).eq('owner_id', current_user.id).execute()
+        
+        if not result.data:
+            raise HTTPException(status_code=404, detail="Flashcard set not found")
+        
+        return result.data[0]
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
