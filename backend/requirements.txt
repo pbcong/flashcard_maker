@@ -9,3 +9,6 @@ pydantic
 cryptography
 sqlalchemy
 alembic
+supabase
+typing-extensions
+httpx
