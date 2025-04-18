@@ -14,15 +14,16 @@ load_dotenv()
 app = FastAPI()
 
 # Get allowed origins from environment variable
-allowed_origins = os.getenv("ALLOWED_ORIGINS", "https://https://flashcard-maker-lyart.vercel.app/").split(",")
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "https://flashcard-maker-lyart.vercel.app,http://localhost:5173").split(",")
 
-# Configure CORS
+# Configure CORS - make sure to properly set up the middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "OPTIONS"],  # Added OPTIONS which is crucial for CORS preflight
     allow_headers=["*"],
+    expose_headers=["Content-Type", "Content-Length"],  # Expose necessary headers
 )
 
 # Initialize OpenAI client
@@ -158,4 +159,4 @@ async def upload_images(files: List[UploadFile] = File(...)):
 
 @app.get("/")
 async def read_root():
-    return {"message": "Flashcard Maker API is running"} 
+    return {"message": "Flashcard Maker API is running"}
