@@ -15,6 +15,8 @@ function FlashcardSetView() {
   const [newTitle, setNewTitle] = useState('')
   const { token } = useAuth()
   const [isUpdating, setIsUpdating] = useState(false)
+  const [isShuffled, setIsShuffled] = useState(false)
+  const [isFlipping, setIsFlipping] = useState(false)
 
   useEffect(() => {
     fetchSet()
@@ -56,17 +58,46 @@ function FlashcardSetView() {
     }
   }
 
+  const shuffleCards = () => {
+    if (!set || !set.flashcards) return
+    
+    const shuffledCards = [...set.flashcards]
+    for (let i = shuffledCards.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[shuffledCards[i], shuffledCards[j]] = [shuffledCards[j], shuffledCards[i]]
+    }
+    
+    setSet({ ...set, flashcards: shuffledCards })
+    setCurrentCardIndex(0)
+    setIsFlipped(false)
+    setIsShuffled(true)
+  }
+
   const nextCard = () => {
     if (currentCardIndex < set.flashcards.length - 1) {
-      setCurrentCardIndex(currentCardIndex + 1)
-      setIsFlipped(false)
+      setIsFlipping(true)
+      setTimeout(() => {
+        setCurrentCardIndex(currentCardIndex + 1)
+        setIsFlipped(false)
+        setIsFlipping(false)
+      }, 300) // Wait for flip animation to complete
     }
   }
 
   const previousCard = () => {
     if (currentCardIndex > 0) {
-      setCurrentCardIndex(currentCardIndex - 1)
-      setIsFlipped(false)
+      setIsFlipping(true)
+      setTimeout(() => {
+        setCurrentCardIndex(currentCardIndex - 1)
+        setIsFlipped(false)
+        setIsFlipping(false)
+      }, 300) // Wait for flip animation to complete
+    }
+  }
+
+  const handleCardClick = () => {
+    if (!isFlipping) {
+      setIsFlipped(!isFlipped)
     }
   }
 
@@ -161,12 +192,22 @@ function FlashcardSetView() {
               </button>
             </div>
           )}
-          <button
-            onClick={() => navigate('/')}
-            className="bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 w-full sm:w-auto text-center"
-          >
-            Back to Sets
-          </button>
+          <div className="flex space-x-2 w-full sm:w-auto">
+            <button
+              onClick={shuffleCards}
+              className={`bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 ${
+                isShuffled ? 'bg-purple-700' : ''
+              }`}
+            >
+              {isShuffled ? 'Shuffled' : 'Shuffle Cards'}
+            </button>
+            <button
+              onClick={() => navigate('/')}
+              className="bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 w-full sm:w-auto text-center"
+            >
+              Back to Sets
+            </button>
+          </div>
         </div>
 
         {error && (
@@ -179,7 +220,7 @@ function FlashcardSetView() {
           <div className="flex flex-col items-center">
             <div 
               className="flashcard-container w-full max-w-2xl h-48 sm:h-64 mb-6 sm:mb-8 perspective-1000"
-              onClick={() => setIsFlipped(!isFlipped)}
+              onClick={handleCardClick}
             >
               <div 
                 className={`flashcard w-full h-full relative transition-transform duration-500 transform-style-3d ${
@@ -202,9 +243,9 @@ function FlashcardSetView() {
             <div className="flex justify-between items-center w-full max-w-2xl">
               <button
                 onClick={previousCard}
-                disabled={currentCardIndex === 0}
+                disabled={currentCardIndex === 0 || isFlipping}
                 className={`px-4 py-2 rounded-md transition-all duration-200 ${
-                  currentCardIndex === 0
+                  currentCardIndex === 0 || isFlipping
                     ? 'bg-gray-300 cursor-not-allowed'
                     : 'bg-blue-600 hover:bg-blue-700 text-white transform hover:scale-105'
                 }`}
@@ -216,9 +257,9 @@ function FlashcardSetView() {
               </span>
               <button
                 onClick={nextCard}
-                disabled={currentCardIndex === set.flashcards.length - 1}
+                disabled={currentCardIndex === set.flashcards.length - 1 || isFlipping}
                 className={`px-4 py-2 rounded-md transition-all duration-200 ${
-                  currentCardIndex === set.flashcards.length - 1
+                  currentCardIndex === set.flashcards.length - 1 || isFlipping
                     ? 'bg-gray-300 cursor-not-allowed'
                     : 'bg-blue-600 hover:bg-blue-700 text-white transform hover:scale-105'
                 }`}
