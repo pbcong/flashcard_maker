@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { login } from '../services/api'
 
 function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const { login } = useAuth()
+  const { setToken } = useAuth()
   const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
@@ -16,10 +17,11 @@ function Login() {
     setLoading(true)
 
     try {
-      await login(email, password)
+      const { access_token } = await login(email, password)
+      setToken(access_token)
       navigate('/')
     } catch (err) {
-      setError(err.message)
+      setError(err.message || 'Login failed')
     } finally {
       setLoading(false)
     }
@@ -65,7 +67,7 @@ function Login() {
             <button
               type="submit"
               disabled={loading}
-              className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${
+              className={`bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${
                 loading ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
@@ -74,7 +76,7 @@ function Login() {
             <button
               type="button"
               onClick={() => navigate('/register')}
-              className="text-blue-500 hover:text-blue-700"
+              className="text-indigo-600 hover:text-indigo-700"
             >
               Register
             </button>

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
+import { register } from '../services/api'
 
 function Register() {
   const [email, setEmail] = useState('')
@@ -9,7 +9,6 @@ function Register() {
   const [username, setUsername] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const { register } = useAuth()
   const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
@@ -27,7 +26,7 @@ function Register() {
       await register(email, password, username)
       navigate('/login')
     } catch (err) {
-      setError(err.message)
+      setError(err.message || 'Registration failed')
     } finally {
       setLoading(false)
     }
@@ -99,7 +98,7 @@ function Register() {
             <button
               type="submit"
               disabled={loading}
-              className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${
+              className={`bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${
                 loading ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
@@ -108,7 +107,7 @@ function Register() {
             <button
               type="button"
               onClick={() => navigate('/login')}
-              className="text-blue-500 hover:text-blue-700"
+              className="text-indigo-600 hover:text-indigo-700"
             >
               Login
             </button>

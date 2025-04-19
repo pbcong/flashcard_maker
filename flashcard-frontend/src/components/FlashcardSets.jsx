@@ -1,25 +1,25 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
-import { api } from '../api'
+import { getFlashcardSets, deleteFlashcardSet } from '../services/api'
 
 function FlashcardSets() {
   const [sets, setSets] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const { token } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
     fetchSets()
-  }, [token])
+  }, [])
 
   const fetchSets = async () => {
     try {
-      const data = await api.getFlashcardSets(token)
+      setLoading(true)
+      const data = await getFlashcardSets()
       setSets(data)
+      setError('')
     } catch (err) {
-      setError(err.message)
+      setError(err.message || 'Failed to fetch flashcard sets')
     } finally {
       setLoading(false)
     }
@@ -29,10 +29,10 @@ function FlashcardSets() {
     if (!window.confirm('Are you sure you want to delete this set?')) return
 
     try {
-      await api.deleteFlashcardSet(setId, token)
+      await deleteFlashcardSet(setId)
       setSets(sets.filter(set => set.id !== setId))
     } catch (err) {
-      setError(err.message)
+      setError(err.message || 'Failed to delete flashcard set')
     }
   }
 
@@ -67,7 +67,7 @@ function FlashcardSets() {
               <div className="flex justify-between space-x-2">
                 <button
                   onClick={() => navigate(`/sets/${set.id}`)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 flex-1 text-center"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 flex-1 text-center"
                 >
                   View
                 </button>
