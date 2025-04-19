@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { api } from '../api';
+import { api } from '../services/api';
 
 function CreateFlashcardSet() {
   const [files, setFiles] = useState([]);
