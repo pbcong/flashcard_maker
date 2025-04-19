@@ -4,6 +4,7 @@ import Login from './components/Login'
 import Register from './components/Register'
 import FlashcardSets from './components/FlashcardSets'
 import FlashcardSetView from './components/FlashcardSetView'
+import FlashcardGridView from './components/FlashcardGridView'
 import CreateFlashcardSet from './components/CreateFlashcardSet'
 import Navbar from './components/Navbar'
 
@@ -57,6 +58,16 @@ function AppRoutes() {
           <ProtectedRoute>
             <AuthenticatedLayout>
               <FlashcardSetView />
+            </AuthenticatedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/sets/:setId/grid"
+        element={
+          <ProtectedRoute>
+            <AuthenticatedLayout>
+              <FlashcardGridView />
             </AuthenticatedLayout>
           </ProtectedRoute>
         }
