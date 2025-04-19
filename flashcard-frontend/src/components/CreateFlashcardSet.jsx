@@ -1,13 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { api } from '../services/api';
+import { uploadImages } from '../services/api';
 
 function CreateFlashcardSet() {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { token } = useAuth();
   const navigate = useNavigate();
 
   const handleFileChange = (e) => {
@@ -24,10 +22,10 @@ function CreateFlashcardSet() {
         throw new Error('Please select at least one image');
       }
 
-      const response = await api.uploadImages(files, token);
+      await uploadImages(files);
       navigate('/');
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Failed to upload images');
     } finally {
       setLoading(false);
     }
@@ -68,7 +66,7 @@ function CreateFlashcardSet() {
               <button
                 type="submit"
                 disabled={loading}
-                className={`bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md ${
+                className={`bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md ${
                   loading ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
