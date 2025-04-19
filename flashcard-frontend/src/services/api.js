@@ -1,22 +1,23 @@
-import axios from 'axios';
-
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
-const api = axios.create({
-  baseURL: API_URL,
-  headers: {
+const getHeaders = () => {
+  const headers = {
     'Content-Type': 'application/json',
-  },
-});
-
-// Add request interceptor to include auth token
-api.interceptors.request.use((config) => {
+  };
   const token = localStorage.getItem('token');
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    headers['Authorization'] = `Bearer ${token}`;
   }
-  return config;
-});
+  return headers;
+};
+
+const handleResponse = async (response) => {
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Request failed');
+  }
+  return response.json();
+};
 
 // Auth endpoints
 export const login = async (email, password) => {
@@ -24,65 +25,102 @@ export const login = async (email, password) => {
   formData.append('username', email);
   formData.append('password', password);
 
-  const response = await api.post('/token', formData);
-  return response.data;
+  const response = await fetch(`${API_URL}/token`, {
+    method: 'POST',
+    body: formData,
+  });
+  return handleResponse(response);
 };
 
 export const register = async (email, password, username) => {
-  const response = await api.post('/register', { email, password, username });
-  return response.data;
+  const response = await fetch(`${API_URL}/register`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({ email, password, username }),
+  });
+  return handleResponse(response);
 };
 
 export const getCurrentUser = async () => {
-  const response = await api.get('/users/me');
-  return response.data;
+  const response = await fetch(`${API_URL}/users/me`, {
+    headers: getHeaders(),
+  });
+  return handleResponse(response);
 };
 
 // Flashcard set endpoints
 export const getFlashcardSets = async () => {
-  const response = await api.get('/flashcard-sets');
-  return response.data;
+  const response = await fetch(`${API_URL}/flashcard-sets`, {
+    headers: getHeaders(),
+  });
+  return handleResponse(response);
 };
 
 export const getFlashcardSet = async (setId) => {
-  const response = await api.get(`/flashcard-sets/${setId}`);
-  return response.data;
+  const response = await fetch(`${API_URL}/flashcard-sets/${setId}`, {
+    headers: getHeaders(),
+  });
+  return handleResponse(response);
 };
 
 export const createFlashcardSet = async (data) => {
-  const response = await api.post('/flashcard-sets', data);
-  return response.data;
+  const response = await fetch(`${API_URL}/flashcard-sets`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify(data),
+  });
+  return handleResponse(response);
 };
 
 export const updateFlashcardSet = async (setId, data) => {
-  const response = await api.patch(`/flashcard-sets/${setId}`, data);
-  return response.data;
+  const response = await fetch(`${API_URL}/flashcard-sets/${setId}`, {
+    method: 'PATCH',
+    headers: getHeaders(),
+    body: JSON.stringify(data),
+  });
+  return handleResponse(response);
 };
 
 export const deleteFlashcardSet = async (setId) => {
-  const response = await api.delete(`/flashcard-sets/${setId}`);
-  return response.data;
+  const response = await fetch(`${API_URL}/flashcard-sets/${setId}`, {
+    method: 'DELETE',
+    headers: getHeaders(),
+  });
+  return handleResponse(response);
 };
 
 // Flashcard endpoints
 export const getFlashcards = async (setId) => {
-  const response = await api.get(`/flashcard-sets/${setId}/flashcards`);
-  return response.data;
+  const response = await fetch(`${API_URL}/flashcard-sets/${setId}/flashcards`, {
+    headers: getHeaders(),
+  });
+  return handleResponse(response);
 };
 
 export const createFlashcard = async (setId, data) => {
-  const response = await api.post(`/flashcard-sets/${setId}/flashcards`, data);
-  return response.data;
+  const response = await fetch(`${API_URL}/flashcard-sets/${setId}/flashcards`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify(data),
+  });
+  return handleResponse(response);
 };
 
 export const updateFlashcard = async (setId, cardId, data) => {
-  const response = await api.patch(`/flashcard-sets/${setId}/flashcards/${cardId}`, data);
-  return response.data;
+  const response = await fetch(`${API_URL}/flashcard-sets/${setId}/flashcards/${cardId}`, {
+    method: 'PATCH',
+    headers: getHeaders(),
+    body: JSON.stringify(data),
+  });
+  return handleResponse(response);
 };
 
 export const deleteFlashcard = async (setId, cardId) => {
-  const response = await api.delete(`/flashcard-sets/${setId}/flashcards/${cardId}`);
-  return response.data;
+  const response = await fetch(`${API_URL}/flashcard-sets/${setId}/flashcards/${cardId}`, {
+    method: 'DELETE',
+    headers: getHeaders(),
+  });
+  return handleResponse(response);
 };
 
 // Image upload endpoint
@@ -92,16 +130,18 @@ export const uploadImages = async (files) => {
     formData.append('files', file);
   });
 
-  const response = await api.post('/upload', formData, {
+  const response = await fetch(`${API_URL}/upload`, {
+    method: 'POST',
     headers: {
-      'Content-Type': 'multipart/form-data',
+      'Authorization': `Bearer ${localStorage.getItem('token')}`,
     },
+    body: formData,
   });
-  return response.data;
+  return handleResponse(response);
 };
 
 // API status check
 export const checkApiStatus = async () => {
-  const response = await api.get('/');
-  return response.data;
+  const response = await fetch(`${API_URL}/`);
+  return handleResponse(response);
 }; 
