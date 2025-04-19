@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { api } from '../api'
@@ -7,6 +7,7 @@ function FlashcardSetView() {
   const { setId } = useParams()
   const navigate = useNavigate()
   const [set, setSet] = useState(null)
+  const [originalSet, setOriginalSet] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [currentCardIndex, setCurrentCardIndex] = useState(0)
@@ -26,6 +27,7 @@ function FlashcardSetView() {
     try {
       const data = await api.getFlashcardSet(setId, token)
       setSet(data)
+      setOriginalSet(data)
       setNewTitle(data.title)
     } catch (err) {
       setError(err.message)
@@ -50,6 +52,7 @@ function FlashcardSetView() {
         token
       )
       setSet(updatedSet)
+      setOriginalSet(updatedSet)
       setIsEditing(false)
     } catch (err) {
       setError(err.message)
@@ -58,47 +61,40 @@ function FlashcardSetView() {
     }
   }
 
-  const shuffleCards = () => {
-    if (!set || !set.flashcards) return
-    
-    const shuffledCards = [...set.flashcards]
-    for (let i = shuffledCards.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1))
-      ;[shuffledCards[i], shuffledCards[j]] = [shuffledCards[j], shuffledCards[i]]
+  const toggleShuffle = () => {
+    if (isShuffled) {
+      // Restore original order
+      setSet(originalSet)
+    } else {
+      // Shuffle cards
+      const shuffledCards = [...set.flashcards]
+      for (let i = shuffledCards.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[shuffledCards[i], shuffledCards[j]] = [shuffledCards[j], shuffledCards[i]]
+      }
+      setSet({ ...set, flashcards: shuffledCards })
     }
-    
-    setSet({ ...set, flashcards: shuffledCards })
     setCurrentCardIndex(0)
     setIsFlipped(false)
-    setIsShuffled(true)
+    setIsShuffled(!isShuffled)
   }
 
   const nextCard = () => {
     if (currentCardIndex < set.flashcards.length - 1) {
-      setIsFlipping(true)
-      setTimeout(() => {
-        setCurrentCardIndex(currentCardIndex + 1)
-        setIsFlipped(false)
-        setIsFlipping(false)
-      }, 300) // Wait for flip animation to complete
+      setIsFlipped(false)
+      setCurrentCardIndex(currentCardIndex + 1)
     }
   }
 
   const previousCard = () => {
     if (currentCardIndex > 0) {
-      setIsFlipping(true)
-      setTimeout(() => {
-        setCurrentCardIndex(currentCardIndex - 1)
-        setIsFlipped(false)
-        setIsFlipping(false)
-      }, 300) // Wait for flip animation to complete
+      setIsFlipped(false)
+      setCurrentCardIndex(currentCardIndex - 1)
     }
   }
 
   const handleCardClick = () => {
-    if (!isFlipping) {
-      setIsFlipped(!isFlipped)
-    }
+    setIsFlipped(!isFlipped)
   }
 
   if (loading) {
@@ -194,12 +190,14 @@ function FlashcardSetView() {
           )}
           <div className="flex space-x-2 w-full sm:w-auto">
             <button
-              onClick={shuffleCards}
-              className={`bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 ${
-                isShuffled ? 'bg-purple-700' : ''
-              }`}
+              onClick={toggleShuffle}
+              className={`${
+                isShuffled 
+                  ? 'bg-purple-700 hover:bg-purple-800' 
+                  : 'bg-purple-600 hover:bg-purple-700'
+              } text-white font-medium py-2 px-4 rounded-md transition-colors duration-200`}
             >
-              {isShuffled ? 'Shuffled' : 'Shuffle Cards'}
+              {isShuffled ? 'Shuffle On' : 'Shuffle Off'}
             </button>
             <button
               onClick={() => navigate('/')}
@@ -223,7 +221,7 @@ function FlashcardSetView() {
               onClick={handleCardClick}
             >
               <div 
-                className={`flashcard w-full h-full relative transition-transform duration-500 transform-style-3d ${
+                className={`flashcard w-full h-full relative transition-transform duration-200 transform-style-3d ${
                   isFlipped ? 'rotate-y-180' : ''
                 }`}
               >
@@ -243,9 +241,9 @@ function FlashcardSetView() {
             <div className="flex justify-between items-center w-full max-w-2xl">
               <button
                 onClick={previousCard}
-                disabled={currentCardIndex === 0 || isFlipping}
+                disabled={currentCardIndex === 0}
                 className={`px-4 py-2 rounded-md transition-all duration-200 ${
-                  currentCardIndex === 0 || isFlipping
+                  currentCardIndex === 0
                     ? 'bg-gray-300 cursor-not-allowed'
                     : 'bg-blue-600 hover:bg-blue-700 text-white transform hover:scale-105'
                 }`}
@@ -257,9 +255,9 @@ function FlashcardSetView() {
               </span>
               <button
                 onClick={nextCard}
-                disabled={currentCardIndex === set.flashcards.length - 1 || isFlipping}
+                disabled={currentCardIndex === set.flashcards.length - 1}
                 className={`px-4 py-2 rounded-md transition-all duration-200 ${
-                  currentCardIndex === set.flashcards.length - 1 || isFlipping
+                  currentCardIndex === set.flashcards.length - 1
                     ? 'bg-gray-300 cursor-not-allowed'
                     : 'bg-blue-600 hover:bg-blue-700 text-white transform hover:scale-105'
                 }`}
