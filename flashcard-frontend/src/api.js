@@ -131,4 +131,50 @@ export const api = {
 
     return response.json();
   },
+
+  async addFlashcardToSet(setId, cardData, token) {
+    const response = await fetch(`${API_URL}/flashcard-sets/${setId}/flashcards`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(cardData)
+    })
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.detail || 'Failed to add flashcard')
+    }
+    return response.json()
+  },
+
+  async updateFlashcard(setId, cardId, cardData, token) {
+    const response = await fetch(`${API_URL}/flashcard-sets/${setId}/flashcards/${cardId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(cardData)
+    })
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.detail || 'Failed to update flashcard')
+    }
+    return response.json()
+  },
+
+  async deleteFlashcard(setId, cardId, token) {
+    const response = await fetch(`${API_URL}/flashcard-sets/${setId}/flashcards/${cardId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.detail || 'Failed to delete flashcard')
+    }
+    return response.json()
+  },
 }; 

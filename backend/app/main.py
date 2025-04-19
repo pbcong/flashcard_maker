@@ -318,6 +318,84 @@ async def update_flashcard_set(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/flashcard-sets/{set_id}/flashcards")
+async def add_flashcard_to_set(
+    set_id: int,
+    data: dict,
+    current_user: User = Depends(get_current_user)
+):
+    try:
+        # Verify set ownership
+        set_result = supabase.table('flashcard_sets').select('id').eq('id', set_id).eq('owner_id', current_user.id).execute()
+        if not set_result.data:
+            raise HTTPException(status_code=404, detail="Flashcard set not found")
+
+        # Add the flashcard
+        card_data = {
+            "front": data["front"],
+            "back": data["back"],
+            "set_id": set_id
+        }
+        
+        result = supabase.table('flashcards').insert(card_data).execute()
+        if not result.data:
+            raise HTTPException(status_code=500, detail="Failed to add flashcard")
+        
+        # Return the updated set with all flashcards
+        return await get_flashcard_set(set_id, current_user)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.patch("/flashcard-sets/{set_id}/flashcards/{card_id}")
+async def update_flashcard(
+    set_id: int,
+    card_id: int,
+    data: dict,
+    current_user: User = Depends(get_current_user)
+):
+    try:
+        # Verify set ownership
+        set_result = supabase.table('flashcard_sets').select('id').eq('id', set_id).eq('owner_id', current_user.id).execute()
+        if not set_result.data:
+            raise HTTPException(status_code=404, detail="Flashcard set not found")
+
+        # Update the flashcard
+        result = supabase.table('flashcards').update({
+            "front": data["front"],
+            "back": data["back"]
+        }).eq('id', card_id).eq('set_id', set_id).execute()
+        
+        if not result.data:
+            raise HTTPException(status_code=404, detail="Flashcard not found")
+        
+        # Return the updated set with all flashcards
+        return await get_flashcard_set(set_id, current_user)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/flashcard-sets/{set_id}/flashcards/{card_id}")
+async def delete_flashcard(
+    set_id: int,
+    card_id: int,
+    current_user: User = Depends(get_current_user)
+):
+    try:
+        # Verify set ownership
+        set_result = supabase.table('flashcard_sets').select('id').eq('id', set_id).eq('owner_id', current_user.id).execute()
+        if not set_result.data:
+            raise HTTPException(status_code=404, detail="Flashcard set not found")
+
+        # Delete the flashcard
+        result = supabase.table('flashcards').delete().eq('id', card_id).eq('set_id', set_id).execute()
+        
+        if not result.data:
+            raise HTTPException(status_code=404, detail="Flashcard not found")
+        
+        # Return the updated set with all flashcards
+        return await get_flashcard_set(set_id, current_user)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/")
 async def read_root():
     return {"message": "Flashcard Maker API is running"}

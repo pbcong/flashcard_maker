@@ -1,297 +1,127 @@
-import { useState, useEffect, useRef } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
-import { api } from '../api'
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { getFlashcardSet, updateFlashcardSet } from '../services/api';
 
-function FlashcardSetView() {
-  const { setId } = useParams()
-  const navigate = useNavigate()
-  const [set, setSet] = useState(null)
-  const [originalSet, setOriginalSet] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [currentCardIndex, setCurrentCardIndex] = useState(0)
-  const [isFlipped, setIsFlipped] = useState(false)
-  const [isEditing, setIsEditing] = useState(false)
-  const [newTitle, setNewTitle] = useState('')
-  const { token } = useAuth()
-  const [isUpdating, setIsUpdating] = useState(false)
-  const [isShuffled, setIsShuffled] = useState(false)
-  const [isFlipping, setIsFlipping] = useState(false)
+const FlashcardSetView = () => {
+  const { setId } = useParams();
+  const navigate = useNavigate();
+  const [set, setSet] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isShuffled, setIsShuffled] = useState(false);
+  const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const [isFlipped, setIsFlipped] = useState(false);
 
   useEffect(() => {
-    fetchSet()
-  }, [setId, token])
+    fetchSet();
+  }, [setId]);
 
   const fetchSet = async () => {
     try {
-      const data = await api.getFlashcardSet(setId, token)
-      setSet(data)
-      setOriginalSet(data)
-      setNewTitle(data.title)
+      setLoading(true);
+      const data = await getFlashcardSet(setId);
+      setSet(data);
+      setError(null);
     } catch (err) {
-      setError(err.message)
+      setError('Failed to load flashcard set');
+      console.error('Error fetching set:', err);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  const handleTitleUpdate = async () => {
-    if (!newTitle.trim()) {
-      setError('Title cannot be empty')
-      return
-    }
-
-    setIsUpdating(true)
-    setError('')
-
-    try {
-      const updatedSet = await api.updateFlashcardSet(
-        setId,
-        { title: newTitle.trim() },
-        token
-      )
-      setSet(updatedSet)
-      setOriginalSet(updatedSet)
-      setIsEditing(false)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setIsUpdating(false)
-    }
-  }
-
-  const toggleShuffle = () => {
-    if (isShuffled) {
-      // Restore original order
-      setSet(originalSet)
+  const handleShuffleToggle = () => {
+    setIsShuffled(!isShuffled);
+    if (!isShuffled) {
+      // Shuffle the cards
+      const shuffledCards = [...set.cards].sort(() => Math.random() - 0.5);
+      setSet({ ...set, cards: shuffledCards });
     } else {
-      // Shuffle cards
-      const shuffledCards = [...set.flashcards]
-      for (let i = shuffledCards.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1))
-        ;[shuffledCards[i], shuffledCards[j]] = [shuffledCards[j], shuffledCards[i]]
-      }
-      setSet({ ...set, flashcards: shuffledCards })
+      // Reset to original order
+      fetchSet();
     }
-    setCurrentCardIndex(0)
-    setIsFlipped(false)
-    setIsShuffled(!isShuffled)
-  }
+    setCurrentCardIndex(0);
+    setIsFlipped(false);
+  };
 
-  const nextCard = () => {
-    if (currentCardIndex < set.flashcards.length - 1) {
-      setCurrentCardIndex(currentCardIndex + 1)
-      setIsFlipped(false)
+  const handleNextCard = () => {
+    if (currentCardIndex < set.cards.length - 1) {
+      setCurrentCardIndex(currentCardIndex + 1);
+      setIsFlipped(false);
     }
-  }
+  };
 
-  const previousCard = () => {
+  const handlePrevCard = () => {
     if (currentCardIndex > 0) {
-      setCurrentCardIndex(currentCardIndex - 1)
-      setIsFlipped(false)
+      setCurrentCardIndex(currentCardIndex - 1);
+      setIsFlipped(false);
     }
-  }
+  };
 
-  const handleCardClick = () => {
-    setIsFlipped(!isFlipped)
-  }
+  if (loading) return <div className="text-center py-8">Loading flashcard set...</div>;
+  if (error) return <div className="text-center text-red-500 py-8">{error}</div>;
+  if (!set) return <div className="text-center py-8">No flashcard set found</div>;
 
-  if (loading) {
-    return <div className="flex justify-center items-center min-h-screen">Loading...</div>
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="bg-white p-8 rounded-lg shadow-md">
-          <h2 className="text-2xl font-bold text-red-600 mb-4">Error</h2>
-          <p className="text-gray-700 mb-4">{error}</p>
-          <button
-            onClick={() => navigate('/')}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md"
-          >
-            Back to Sets
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  if (!set || !set.flashcards || set.flashcards.length === 0) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="bg-white p-8 rounded-lg shadow-md">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">No Flashcards Found</h2>
-          <button
-            onClick={() => navigate('/')}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md"
-          >
-            Back to Sets
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  const currentCard = set.flashcards[currentCardIndex]
+  const currentCard = set.cards[currentCardIndex];
 
   return (
-    <div className="min-h-screen bg-gray-100 py-4 sm:py-8">
-      <div className="max-w-4xl mx-auto px-4">
-        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 sm:mb-8 gap-4">
-          {isEditing ? (
-            <div className="flex items-center space-x-2 w-full sm:w-auto">
-              <input
-                type="text"
-                value={newTitle}
-                onChange={(e) => setNewTitle(e.target.value)}
-                className="text-2xl sm:text-3xl font-bold text-gray-800 border-b-2 border-gray-300 focus:border-blue-500 focus:outline-none w-full"
-                disabled={isUpdating}
-              />
-              <div className="flex space-x-2">
-                <button
-                  onClick={handleTitleUpdate}
-                  disabled={isUpdating}
-                  className={`bg-green-500 hover:bg-green-600 text-white font-medium py-1 px-3 rounded-md transition-colors duration-200 ${
-                    isUpdating ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
-                >
-                  {isUpdating ? 'Saving...' : 'Save'}
-                </button>
-                <button
-                  onClick={() => {
-                    setIsEditing(false)
-                    setNewTitle(set.title)
-                  }}
-                  className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-1 px-3 rounded-md transition-colors duration-200"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center space-x-2 w-full sm:w-auto">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 truncate">{set.title}</h1>
-              <button
-                onClick={() => setIsEditing(true)}
-                className="text-gray-500 hover:text-gray-700 transition-colors duration-200"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                </svg>
-              </button>
-            </div>
-          )}
-          <div className="flex space-x-2 w-full sm:w-auto">
-            <button
-              onClick={toggleShuffle}
-              className={`${
-                isShuffled 
-                  ? 'bg-purple-700 hover:bg-purple-800' 
-                  : 'bg-purple-600 hover:bg-purple-700'
-              } text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 flex items-center justify-center`}
-              title={isShuffled ? "Shuffle On" : "Shuffle Off"}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path d="M8 5a1 1 0 100 2h5.586l-1.293 1.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L13.586 5H8zM12 15a1 1 0 100-2H6.414l1.293-1.293a1 1 0 10-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L6.414 15H12z" />
-              </svg>
-            </button>
-            <button
-              onClick={() => navigate(`/sets/${setId}/grid`)}
-              className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 flex items-center justify-center"
-              title="Grid View"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-              </svg>
-            </button>
-            <button
-              onClick={() => navigate('/')}
-              className="bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 w-full sm:w-auto text-center"
-            >
-              Back to Sets
-            </button>
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">{set.title}</h1>
+        <div className="flex space-x-4">
+          <button
+            onClick={handleShuffleToggle}
+            className={`${
+              isShuffled ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-indigo-500 hover:bg-indigo-600'
+            } text-white font-medium py-2 px-4 rounded-md transition-colors duration-200`}
+          >
+            {isShuffled ? 'Unshuffle' : 'Shuffle'}
+          </button>
+          <button
+            onClick={() => navigate(`/sets/${setId}/edit`)}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200"
+          >
+            Edit Set
+          </button>
+        </div>
+      </div>
+
+      <div className="max-w-2xl mx-auto">
+        <div
+          className={`relative h-64 bg-white rounded-lg shadow-lg cursor-pointer transform transition-transform duration-500 ${
+            isFlipped ? 'rotate-y-180' : ''
+          }`}
+          onClick={() => setIsFlipped(!isFlipped)}
+        >
+          <div className="absolute inset-0 flex items-center justify-center p-8">
+            <p className="text-xl text-gray-800 text-center">
+              {isFlipped ? currentCard.back : currentCard.front}
+            </p>
           </div>
         </div>
 
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 animate-fade-in">
-            {error}
-          </div>
-        )}
-
-        <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
-          <div className="flex flex-col items-center">
-            <div 
-              className="flashcard-container w-full max-w-2xl h-48 sm:h-64 mb-6 sm:mb-8 perspective-1000"
-              onClick={handleCardClick}
-            >
-              <div 
-                className={`flashcard w-full h-full relative transition-transform duration-100 transform-style-3d ${
-                  isFlipped ? 'rotate-y-180' : ''
-                }`}
-              >
-                <div className="flashcard-front absolute w-full h-full bg-white rounded-lg shadow-md flex items-center justify-center backface-hidden">
-                  <div className="text-xl sm:text-2xl font-bold text-center p-4 sm:p-8">
-                    {currentCard.front}
-                  </div>
-                </div>
-                <div className="flashcard-back absolute w-full h-full bg-white rounded-lg shadow-md flex items-center justify-center backface-hidden rotate-y-180">
-                  <div className="text-lg sm:text-xl text-center p-4 sm:p-8">
-                    {currentCard.back}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-between items-center w-full max-w-2xl">
-              <button
-                onClick={previousCard}
-                disabled={currentCardIndex === 0}
-                className={`px-4 py-2 rounded-md transition-all duration-200 ${
-                  currentCardIndex === 0
-                    ? 'bg-gray-300 cursor-not-allowed'
-                    : 'bg-blue-600 hover:bg-blue-700 text-white transform hover:scale-105'
-                }`}
-              >
-                Previous
-              </button>
-              <span className="text-gray-600 text-sm sm:text-base">
-                Card {currentCardIndex + 1} of {set.flashcards.length}
-              </span>
-              <button
-                onClick={nextCard}
-                disabled={currentCardIndex === set.flashcards.length - 1}
-                className={`px-4 py-2 rounded-md transition-all duration-200 ${
-                  currentCardIndex === set.flashcards.length - 1
-                    ? 'bg-gray-300 cursor-not-allowed'
-                    : 'bg-blue-600 hover:bg-blue-700 text-white transform hover:scale-105'
-                }`}
-              >
-                Next
-              </button>
-            </div>
-          </div>
+        <div className="flex justify-between items-center mt-6">
+          <button
+            onClick={handlePrevCard}
+            disabled={currentCardIndex === 0}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Previous
+          </button>
+          <span className="text-gray-600">
+            Card {currentCardIndex + 1} of {set.cards.length}
+          </span>
+          <button
+            onClick={handleNextCard}
+            disabled={currentCardIndex === set.cards.length - 1}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Next
+          </button>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default FlashcardSetView 
+export default FlashcardSetView; 
