@@ -110,43 +110,45 @@ function FlashcardSetView() {
   const currentCard = set.flashcards[currentCardIndex]
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8">
+    <div className="min-h-screen bg-gray-100 py-4 sm:py-8">
       <div className="max-w-4xl mx-auto px-4">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 sm:mb-8 gap-4">
           {isEditing ? (
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 w-full sm:w-auto">
               <input
                 type="text"
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
-                className="text-3xl font-bold text-gray-800 border-b-2 border-gray-300 focus:border-blue-500 focus:outline-none"
+                className="text-2xl sm:text-3xl font-bold text-gray-800 border-b-2 border-gray-300 focus:border-blue-500 focus:outline-none w-full"
                 disabled={isUpdating}
               />
-              <button
-                onClick={handleTitleUpdate}
-                disabled={isUpdating}
-                className={`bg-green-500 hover:bg-green-600 text-white font-medium py-1 px-3 rounded-md ${
-                  isUpdating ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-              >
-                {isUpdating ? 'Saving...' : 'Save'}
-              </button>
-              <button
-                onClick={() => {
-                  setIsEditing(false)
-                  setNewTitle(set.title)
-                }}
-                className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-1 px-3 rounded-md"
-              >
-                Cancel
-              </button>
+              <div className="flex space-x-2">
+                <button
+                  onClick={handleTitleUpdate}
+                  disabled={isUpdating}
+                  className={`bg-green-500 hover:bg-green-600 text-white font-medium py-1 px-3 rounded-md transition-colors duration-200 ${
+                    isUpdating ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  {isUpdating ? 'Saving...' : 'Save'}
+                </button>
+                <button
+                  onClick={() => {
+                    setIsEditing(false)
+                    setNewTitle(set.title)
+                  }}
+                  className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-1 px-3 rounded-md transition-colors duration-200"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           ) : (
-            <div className="flex items-center space-x-2">
-              <h1 className="text-3xl font-bold text-gray-800">{set.title}</h1>
+            <div className="flex items-center space-x-2 w-full sm:w-auto">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 truncate">{set.title}</h1>
               <button
                 onClick={() => setIsEditing(true)}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-gray-500 hover:text-gray-700 transition-colors duration-200"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -161,51 +163,55 @@ function FlashcardSetView() {
           )}
           <button
             onClick={() => navigate('/')}
-            className="bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-md"
+            className="bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 w-full sm:w-auto text-center"
           >
             Back to Sets
           </button>
         </div>
 
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 animate-fade-in">
             {error}
           </div>
         )}
 
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
           <div className="flex flex-col items-center">
             <div 
-              className="flashcard-container w-full max-w-2xl h-64 mb-8"
+              className="flashcard-container w-full max-w-2xl h-48 sm:h-64 mb-6 sm:mb-8 perspective-1000"
               onClick={() => setIsFlipped(!isFlipped)}
             >
-              <div className={`flashcard w-full h-full relative ${isFlipped ? 'rotate-y-180' : ''}`}>
-                <div className="flashcard-front absolute w-full h-full bg-white rounded-lg shadow-md flex items-center justify-center">
-                  <div className="text-2xl font-bold text-center p-8">
+              <div 
+                className={`flashcard w-full h-full relative transition-transform duration-500 transform-style-3d ${
+                  isFlipped ? 'rotate-y-180' : ''
+                }`}
+              >
+                <div className="flashcard-front absolute w-full h-full bg-white rounded-lg shadow-md flex items-center justify-center backface-hidden">
+                  <div className="text-xl sm:text-2xl font-bold text-center p-4 sm:p-8">
                     {currentCard.front}
                   </div>
                 </div>
-                <div className="flashcard-back absolute w-full h-full bg-white rounded-lg shadow-md flex items-center justify-center">
-                  <div className="text-xl text-center p-8">
+                <div className="flashcard-back absolute w-full h-full bg-white rounded-lg shadow-md flex items-center justify-center backface-hidden rotate-y-180">
+                  <div className="text-lg sm:text-xl text-center p-4 sm:p-8">
                     {currentCard.back}
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="flex justify-between w-full max-w-2xl">
+            <div className="flex justify-between items-center w-full max-w-2xl">
               <button
                 onClick={previousCard}
                 disabled={currentCardIndex === 0}
                 className={`px-4 py-2 rounded-md transition-all duration-200 ${
                   currentCardIndex === 0
                     ? 'bg-gray-300 cursor-not-allowed'
-                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                    : 'bg-blue-600 hover:bg-blue-700 text-white transform hover:scale-105'
                 }`}
               >
                 Previous
               </button>
-              <span className="text-gray-600 self-center">
+              <span className="text-gray-600 text-sm sm:text-base">
                 Card {currentCardIndex + 1} of {set.flashcards.length}
               </span>
               <button
@@ -214,7 +220,7 @@ function FlashcardSetView() {
                 className={`px-4 py-2 rounded-md transition-all duration-200 ${
                   currentCardIndex === set.flashcards.length - 1
                     ? 'bg-gray-300 cursor-not-allowed'
-                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                    : 'bg-blue-600 hover:bg-blue-700 text-white transform hover:scale-105'
                 }`}
               >
                 Next
