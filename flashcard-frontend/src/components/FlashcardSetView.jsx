@@ -81,15 +81,15 @@ function FlashcardSetView() {
 
   const nextCard = () => {
     if (currentCardIndex < set.flashcards.length - 1) {
-      setIsFlipped(false)
       setCurrentCardIndex(currentCardIndex + 1)
+      setIsFlipped(false)
     }
   }
 
   const previousCard = () => {
     if (currentCardIndex > 0) {
-      setIsFlipped(false)
       setCurrentCardIndex(currentCardIndex - 1)
+      setIsFlipped(false)
     }
   }
 
@@ -195,9 +195,21 @@ function FlashcardSetView() {
                 isShuffled 
                   ? 'bg-purple-700 hover:bg-purple-800' 
                   : 'bg-purple-600 hover:bg-purple-700'
-              } text-white font-medium py-2 px-4 rounded-md transition-colors duration-200`}
+              } text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 flex items-center justify-center`}
+              title={isShuffled ? "Shuffle On" : "Shuffle Off"}
             >
-              {isShuffled ? 'Shuffle On' : 'Shuffle Off'}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
             </button>
             <button
               onClick={() => navigate('/')}
@@ -221,7 +233,7 @@ function FlashcardSetView() {
               onClick={handleCardClick}
             >
               <div 
-                className={`flashcard w-full h-full relative transition-transform duration-200 transform-style-3d ${
+                className={`flashcard w-full h-full relative transition-transform duration-100 transform-style-3d ${
                   isFlipped ? 'rotate-y-180' : ''
                 }`}
               >
