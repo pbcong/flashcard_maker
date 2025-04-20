@@ -12,16 +12,26 @@ function FlashcardSetView() {
   const [currentCardIndex, setCurrentCardIndex] = useState(0)
   const [isFlipped, setIsFlipped] = useState(false)
   const [isShuffled, setIsShuffled] = useState(false)
+  const [viewedCards, setViewedCards] = useState(new Set())
   const { token } = useAuth()
 
   useEffect(() => {
     fetchSet()
   }, [setId, token])
 
+  useEffect(() => {
+    // Add current card to viewed cards when it changes
+    if (set?.flashcards) {
+      setViewedCards(prev => new Set([...prev, currentCardIndex]))
+    }
+  }, [currentCardIndex])
+
   const fetchSet = async () => {
     try {
       const data = await api.getFlashcardSet(setId, token)
       setSet(data)
+      // Reset viewed cards when fetching new set
+      setViewedCards(new Set([0]))
     } catch (err) {
       setError(err.message)
     } finally {
@@ -36,6 +46,8 @@ function FlashcardSetView() {
     setCurrentCardIndex(0)
     setIsFlipped(false)
     setIsShuffled(true)
+    // Reset viewed cards when shuffling
+    setViewedCards(new Set([0]))
   }
 
   const handleRestart = () => {
@@ -45,6 +57,8 @@ function FlashcardSetView() {
       fetchSet() // Reset to original order
       setIsShuffled(false)
     }
+    // Reset viewed cards when restarting
+    setViewedCards(new Set([0]))
   }
 
   const nextCard = () => {
@@ -59,6 +73,11 @@ function FlashcardSetView() {
       setCurrentCardIndex(currentCardIndex - 1)
       setIsFlipped(false)
     }
+  }
+
+  const getProgress = () => {
+    if (!set?.flashcards) return 0
+    return (viewedCards.size / set.flashcards.length) * 100
   }
 
   if (loading) {
@@ -117,7 +136,15 @@ function FlashcardSetView() {
 
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900">{set.title}</h1>
-          <p className="text-gray-600 mt-1">Card {currentCardIndex + 1} of {set.flashcards.length}</p>
+          <div className="mt-2 space-y-2">
+            <p className="text-gray-600">Card {currentCardIndex + 1} of {set.flashcards.length}</p>
+            <div className="w-full bg-gray-200 h-1 rounded-full">
+              <div 
+                className="bg-black h-1 rounded-full transition-all duration-300 ease-in-out" 
+                style={{ width: `${getProgress()}%` }}
+              />
+            </div>
+          </div>
         </div>
 
         <div className="flex justify-end space-x-4 mb-6">
@@ -125,8 +152,8 @@ function FlashcardSetView() {
             onClick={handleShuffle}
             className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
           >
-            <svg className="w-5 h-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10.293 15.707a1 1 0 010-1.414L14.586 10l-4.293-4.293a1 1 0 111.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z" clipRule="evenodd" />
+            <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 15l-3-3m0 0l-3 3m3-3v12M6.5 7l1-1m0 0l1-1M7.5 6l-1 1m0 0l-1 1M4 4v7h7M4 4h7" />
             </svg>
             Shuffle
           </button>
@@ -134,8 +161,8 @@ function FlashcardSetView() {
             onClick={handleRestart}
             className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
           >
-            <svg className="w-5 h-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+            <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
             Restart
           </button>
