@@ -7,6 +7,7 @@ function FlashcardSets() {
   const [sets, setSets] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
   const { token } = useAuth()
   const navigate = useNavigate()
 
@@ -36,15 +37,37 @@ function FlashcardSets() {
     }
   }
 
+  const filteredSets = sets.filter(set => 
+    set.title.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
   if (loading) {
     return <div className="flex justify-center items-center min-h-screen">Loading...</div>
   }
 
   return (
     <div className="min-h-screen bg-gray-100 py-4 sm:py-8">
-      <div className="max-w-4xl mx-auto px-4">
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">My Flashcard Sets</h1>
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="relative mb-6">
+          <input
+            type="text"
+            placeholder="Search flashcard sets..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full px-4 py-2 pl-10 pr-4 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+          <svg
+            className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fillRule="evenodd"
+              d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+              clipRule="evenodd"
+            />
+          </svg>
         </div>
 
         {error && (
@@ -53,29 +76,35 @@ function FlashcardSets() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          {sets.map((set) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredSets.map((set) => (
             <div 
               key={set.id} 
-              className="bg-white rounded-lg shadow-md p-4 sm:p-6 hover:shadow-lg transition-shadow duration-200 transform hover:-translate-y-1"
+              className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow duration-200"
             >
-              <h2 className="text-lg sm:text-xl font-semibold mb-2 truncate">{set.title}</h2>
-              <p className="text-gray-600 mb-3 text-sm sm:text-base line-clamp-2">{set.description}</p>
-              <p className="text-xs sm:text-sm text-gray-500 mb-4">
-                {set.flashcards?.length || 0} cards
-              </p>
-              <div className="flex justify-between space-x-2">
-                <button
-                  onClick={() => navigate(`/sets/${set.id}`)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 flex-1 text-center"
-                >
-                  View
-                </button>
+              <div className="flex justify-between items-start mb-4">
+                <h2 className="text-xl font-semibold text-gray-900 truncate">{set.title}</h2>
                 <button
                   onClick={() => handleDelete(set.id)}
-                  className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 flex-1 text-center"
+                  className="text-gray-400 hover:text-red-500 transition-colors duration-200"
                 >
-                  Delete
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+              <p className="text-sm text-gray-500 mb-4">
+                {set.flashcards?.length || 0} cards
+              </p>
+              <div className="flex justify-between items-center">
+                <p className="text-sm text-gray-500">
+                  Last studied: {set.lastStudied || 'Never'}
+                </p>
+                <button
+                  onClick={() => navigate(`/sets/${set.id}`)}
+                  className="text-blue-600 hover:text-blue-700 font-medium text-sm transition-colors duration-200"
+                >
+                  Study Now
                 </button>
               </div>
             </div>
