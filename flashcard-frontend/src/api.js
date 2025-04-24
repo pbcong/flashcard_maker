@@ -50,12 +50,7 @@ export const api = {
     return response.json();
   },
 
-  async uploadImages(files, token) {
-    const formData = new FormData();
-    files.forEach(file => {
-      formData.append('files', file);
-    });
-
+  async uploadImages(formData, token) {
     const response = await fetch(`${API_URL}/upload`, {
       method: 'POST',
       headers: {
@@ -127,6 +122,24 @@ export const api = {
 
     if (!response.ok) {
       throw new Error('Failed to update flashcard set');
+    }
+
+    return response.json();
+  },
+
+  async createFlashcardSet(data, token) {
+    const response = await fetch(`${API_URL}/flashcard-sets`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to create flashcard set');
     }
 
     return response.json();

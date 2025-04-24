@@ -86,7 +86,7 @@ function FlashcardSets() {
           {filteredSets.map((set) => (
             <div 
               key={set.id} 
-              className="bg-white rounded-lg shadow-sm overflow-hidden"
+              className="bg-white rounded-lg shadow-sm overflow-hidden flex flex-col h-[360px]"
             >
               <div className="h-48 bg-gray-100 flex items-center justify-center">
                 <svg className="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24">
@@ -94,9 +94,9 @@ function FlashcardSets() {
                 </svg>
               </div>
               
-              <div className="p-6">
+              <div className="p-6 flex-1 flex flex-col">
                 <div className="flex justify-between items-start mb-2">
-                  <h2 className="text-xl font-bold text-gray-900">{set.title}</h2>
+                  <h2 className="text-xl font-bold text-gray-900 line-clamp-1">{set.title}</h2>
                   <div className="relative">
                     <button
                       onClick={() => toggleMenu(set.id)}
@@ -110,15 +110,6 @@ function FlashcardSets() {
                       <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
                         <div className="py-1">
                           <button
-                            onClick={() => {
-                              navigate(`/sets/${set.id}/edit`)
-                              setActiveMenu(null)
-                            }}
-                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          >
-                            Edit
-                          </button>
-                          <button
                             onClick={() => handleDelete(set.id)}
                             className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
                           >
@@ -129,7 +120,7 @@ function FlashcardSets() {
                     )}
                   </div>
                 </div>
-                <p className="text-gray-600 mb-4">{set.description}</p>
+                <p className="text-gray-600 mb-4 line-clamp-2">{set.description || 'No description'}</p>
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-sm text-gray-600">{set.flashcards?.length || 0} cards</span>
                   <span className="text-sm text-gray-600">Last studied: {set.lastStudied || 'Never'}</span>
@@ -139,7 +130,7 @@ function FlashcardSets() {
                 </div>
                 <button
                   onClick={() => navigate(`/sets/${set.id}`)}
-                  className="w-full bg-black text-white rounded-lg py-3 px-4 font-medium hover:bg-gray-900 transition-colors duration-200 flex items-center justify-center"
+                  className="mt-auto w-full bg-black text-white rounded-lg py-3 px-4 font-medium hover:bg-gray-900 transition-colors duration-200 flex items-center justify-center"
                 >
                   <svg className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
                     <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/>

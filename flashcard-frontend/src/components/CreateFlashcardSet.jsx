@@ -6,34 +6,29 @@ import { api } from '../api';
 function CreateFlashcardSet() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [cards, setCards] = useState([{ front: '', back: '', image: null }]);
+  const [selectedImages, setSelectedImages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [previewUrls, setPreviewUrls] = useState([]);
   const { token } = useAuth();
   const navigate = useNavigate();
 
-  const handleAddCard = () => {
-    setCards([...cards, { front: '', back: '', image: null }]);
+  const handleImageSelect = (e) => {
+    const files = Array.from(e.target.files);
+    setSelectedImages(prev => [...prev, ...files]);
+    
+    // Create preview URLs
+    const newPreviewUrls = files.map(file => URL.createObjectURL(file));
+    setPreviewUrls(prev => [...prev, ...newPreviewUrls]);
   };
 
-  const handleRemoveCard = (index) => {
-    setCards(cards.filter((_, i) => i !== index));
-  };
-
-  const handleCardChange = (index, field, value) => {
-    const newCards = [...cards];
-    newCards[index][field] = value;
-    setCards(newCards);
-  };
-
-  const handleImageChange = (index, file) => {
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        handleCardChange(index, 'image', reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
+  const handleRemoveImage = (index) => {
+    setSelectedImages(prev => prev.filter((_, i) => i !== index));
+    setPreviewUrls(prev => {
+      const newUrls = [...prev];
+      URL.revokeObjectURL(newUrls[index]);
+      return newUrls.filter((_, i) => i !== index);
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -43,8 +38,8 @@ function CreateFlashcardSet() {
       return;
     }
 
-    if (cards.some(card => !card.front.trim() || !card.back.trim())) {
-      setError('Please fill in both sides of all cards');
+    if (selectedImages.length === 0) {
+      setError('Please select at least one image');
       return;
     }
 
@@ -52,10 +47,25 @@ function CreateFlashcardSet() {
     setError('');
 
     try {
-      await api.createFlashcardSet({ title, description, cards }, token);
+      // Create FormData and append images
+      const formData = new FormData();
+      selectedImages.forEach(image => {
+        formData.append('files', image);
+      });
+
+      // Upload images and get generated flashcards
+      const response = await api.uploadImages(formData, token);
+      
+      // Create flashcard set with the generated flashcards
+      await api.createFlashcardSet({
+        title,
+        description,
+        cards: response.flashcards
+      }, token);
+
       navigate('/');
     } catch (err) {
-      setError('Failed to create flashcard set');
+      setError(err.message || 'Failed to create flashcard set');
     } finally {
       setLoading(false);
     }
@@ -116,78 +126,42 @@ function CreateFlashcardSet() {
 
             <div className="space-y-6">
               <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold text-gray-900">Flashcards</h2>
-                <button
-                  type="button"
-                  onClick={handleAddCard}
-                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-black hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
-                >
+                <h2 className="text-xl font-semibold text-gray-900">Images</h2>
+                <label className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-black hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black cursor-pointer">
                   <svg className="w-5 h-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
                   </svg>
-                  Add Card
-                </button>
+                  Add Images
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handleImageSelect}
+                    className="hidden"
+                  />
+                </label>
               </div>
 
-              {cards.map((card, index) => (
-                <div key={index} className="bg-gray-50 rounded-lg p-6 relative">
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveCard(index)}
-                    className="absolute top-4 right-4 text-gray-400 hover:text-red-500"
-                  >
-                    <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-
-                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Front
-                      </label>
-                      <textarea
-                        value={card.front}
-                        onChange={(e) => handleCardChange(index, 'front', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
-                        rows="3"
-                        placeholder="Front side text"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Back
-                      </label>
-                      <textarea
-                        value={card.back}
-                        onChange={(e) => handleCardChange(index, 'back', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
-                        rows="3"
-                        placeholder="Back side text"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="mt-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Image (optional)
-                    </label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleImageChange(index, e.target.files[0])}
-                      className="w-full"
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {previewUrls.map((url, index) => (
+                  <div key={index} className="relative group">
+                    <img
+                      src={url}
+                      alt={`Preview ${index + 1}`}
+                      className="w-full h-48 object-cover rounded-lg"
                     />
-                    {card.image && (
-                      <img
-                        src={card.image}
-                        alt="Card preview"
-                        className="mt-2 max-h-32 rounded-md"
-                      />
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(index)}
+                      className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                    >
+                      <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                    </button>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
 
             <div className="flex justify-end">
