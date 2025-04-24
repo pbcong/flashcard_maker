@@ -5,6 +5,7 @@ import Register from './components/Register'
 import FlashcardSets from './components/FlashcardSets'
 import FlashcardSetView from './components/FlashcardSetView'
 import CreateFlashcardSet from './components/CreateFlashcardSet'
+import EditFlashcardSet from './components/EditFlashcardSet'
 import Navbar from './components/Navbar'
 
 // Protected route component
@@ -57,6 +58,16 @@ function AppRoutes() {
           <ProtectedRoute>
             <AuthenticatedLayout>
               <FlashcardSetView />
+            </AuthenticatedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/sets/:setId/edit"
+        element={
+          <ProtectedRoute>
+            <AuthenticatedLayout>
+              <EditFlashcardSet />
             </AuthenticatedLayout>
           </ProtectedRoute>
         }

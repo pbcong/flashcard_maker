@@ -271,18 +271,56 @@ async def delete_flashcard_set(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.patch("/flashcard-sets/{set_id}")
+@app.patch("/flashcard-sets/{set_id}", response_model=FlashcardSet)
 async def update_flashcard_set(
     set_id: int,
     data: dict,
     current_user: User = Depends(get_current_user)
 ):
     try:
-        # Update the set
-        result = supabase.table('flashcard_sets').update(data).eq('id', set_id).eq('owner_id', current_user.id).execute()
+        # First verify the set exists and belongs to the user
+        set_check = supabase.table('flashcard_sets').select('id').eq('id', set_id).eq('owner_id', current_user.id).execute()
+        if not set_check.data:
+            raise HTTPException(status_code=404, detail="Flashcard set not found")
+
+        # Update set details
+        set_data = {
+            "title": data.get("title"),
+            "description": data.get("description")
+        }
+        set_data = {k: v for k, v in set_data.items() if v is not None}
+        
+        if set_data:
+            set_result = supabase.table('flashcard_sets').update(set_data).eq('id', set_id).execute()
+            if not set_result.data:
+                raise HTTPException(status_code=500, detail="Failed to update flashcard set")
+
+        # Update flashcards if provided
+        if "cards" in data:
+            # Delete existing cards
+            supabase.table('flashcards').delete().eq('set_id', set_id).execute()
+            
+            # Insert new cards
+            cards_to_insert = [
+                {
+                    "front": card["front"],
+                    "back": card["back"],
+                    "set_id": set_id
+                } for card in data["cards"]
+            ]
+            
+            if cards_to_insert:
+                cards_result = supabase.table('flashcards').insert(cards_to_insert).execute()
+                if not cards_result.data:
+                    raise HTTPException(status_code=500, detail="Failed to update flashcards")
+
+        # Fetch the updated set with its flashcards
+        result = supabase.table('flashcard_sets').select(
+            'id, title, description, owner_id, flashcards(id, front, back)'
+        ).eq('id', set_id).execute()
         
         if not result.data:
-            raise HTTPException(status_code=404, detail="Flashcard set not found")
+            raise HTTPException(status_code=500, detail="Failed to fetch updated flashcard set")
         
         return result.data[0]
     except Exception as e:
