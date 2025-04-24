@@ -136,10 +136,10 @@ async def register_user(data: Register): # Use imported Register
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@app.post("/upload", response_model=FlashcardResponse) # Use imported FlashcardResponse
+@app.post("/upload", response_model=FlashcardResponse)
 async def upload_images(
     files: List[UploadFile] = File(...),
-    current_user: User = Depends(get_current_user) # Use imported User
+    current_user: User = Depends(get_current_user)
 ):
     try:
         # Check that files were provided
@@ -211,42 +211,12 @@ async def upload_images(
             print(f"OpenAI flashcard generation error: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Error generating flashcards: {str(e)}")
         
-        # Create flashcard set in Supabase
-        set_data = {
-            "title": f"Generated Set {datetime.now().strftime('%Y-%m-%d %H:%M')}",
-            "description": "Automatically generated from images",
-            "owner_id": current_user.id
-        }
-        
-        set_result = supabase.table('flashcard_sets').insert(set_data).execute()
-        if not set_result.data:
-            raise HTTPException(status_code=500, detail="Failed to create flashcard set")
-        
-        new_set_id = set_result.data[0]['id']
-        
-        # Create flashcards in Supabase
-        flashcards_data = json.loads(flashcards_json)
-        cards_to_insert = [
-            {
-                "front": card_data["front"],
-                "back": card_data["back"],
-                "set_id": new_set_id
-            } for card_data in flashcards_data
-        ]
-        
-        cards_result = supabase.table('flashcards').insert(cards_to_insert).execute()
-        if not cards_result.data:
-            # Delete the set if cards insertion fails
-            supabase.table('flashcard_sets').delete().eq('id', new_set_id).execute()
-            raise HTTPException(status_code=500, detail="Failed to create flashcards")
-        
         return FlashcardResponse(
             transcription=content,
-            flashcards=[Flashcard(**card) for card in flashcards_data] # Use imported Flashcard
+            flashcards=[Flashcard(**card) for card in flashcards_data]
         )
         
     except HTTPException:
-        # Re-raise HTTP exceptions
         raise
     except Exception as e:
         print(f"Unexpected error in upload_images: {str(e)}")
@@ -313,6 +283,53 @@ async def update_flashcard_set(
         
         if not result.data:
             raise HTTPException(status_code=404, detail="Flashcard set not found")
+        
+        return result.data[0]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/flashcard-sets", response_model=FlashcardSet)
+async def create_flashcard_set(
+    data: dict,
+    current_user: User = Depends(get_current_user)
+):
+    try:
+        # Create the flashcard set
+        set_data = {
+            "title": data.get("title"),
+            "description": data.get("description"),
+            "owner_id": current_user.id
+        }
+        
+        set_result = supabase.table('flashcard_sets').insert(set_data).execute()
+        if not set_result.data:
+            raise HTTPException(status_code=500, detail="Failed to create flashcard set")
+        
+        new_set_id = set_result.data[0]['id']
+        
+        # Create flashcards
+        cards_to_insert = [
+            {
+                "front": card["front"],
+                "back": card["back"],
+                "set_id": new_set_id
+            } for card in data.get("cards", [])
+        ]
+        
+        if cards_to_insert:
+            cards_result = supabase.table('flashcards').insert(cards_to_insert).execute()
+            if not cards_result.data:
+                # Delete the set if cards insertion fails
+                supabase.table('flashcard_sets').delete().eq('id', new_set_id).execute()
+                raise HTTPException(status_code=500, detail="Failed to create flashcards")
+        
+        # Fetch the created set with its flashcards
+        result = supabase.table('flashcard_sets').select(
+            'id, title, description, owner_id, flashcards(id, front, back)'
+        ).eq('id', new_set_id).execute()
+        
+        if not result.data:
+            raise HTTPException(status_code=500, detail="Failed to fetch created flashcard set")
         
         return result.data[0]
     except Exception as e:
