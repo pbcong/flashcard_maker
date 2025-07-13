@@ -4,8 +4,8 @@ from typing import List
 
 from openai import OpenAI
 
-from .config import settings
-from .models import Flashcard, FlashcardResponse
+from ..core.config import settings
+from ..models.models import Flashcard, FlashcardResponse
 from .prompts import FLASHCARD_PROMPT, TRANSCRIPT_PROMPT
 
 client = OpenAI(api_key=settings.openai_api_key)
@@ -51,7 +51,7 @@ async def process_images_to_flashcards(images: List[bytes]) -> FlashcardResponse
     
     transcription = client.chat.completions.create(
         messages=transcript_prompt,
-        model="gpt-4o",
+        model=settings.openai_model,
         max_tokens=1024
     )
     
@@ -59,7 +59,7 @@ async def process_images_to_flashcards(images: List[bytes]) -> FlashcardResponse
     
     flashcard_prompt = create_flashcard_message(content)
     flashcards = client.chat.completions.create(
-        model="gpt-4o",
+        model=settings.openai_model,
         messages=[flashcard_prompt],
         temperature=0.3,
         max_tokens=1024

@@ -37,3 +37,7 @@ class Register(BaseModel):
     email: str
     password: str
     username: str
+
+
+class Message(BaseModel):
+    message: str

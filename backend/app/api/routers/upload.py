@@ -2,9 +2,9 @@ from typing import List
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
-from ..auth import get_current_user
-from ..models import FlashcardResponse, User
-from ..services import process_images_to_flashcards
+from ...models.models import FlashcardResponse, User
+from ...services.services import process_images_to_flashcards
+from .auth import get_current_user
 
 router = APIRouter(prefix="/upload", tags=["Upload"])
 

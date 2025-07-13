@@ -1,17 +1,35 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Header
 from fastapi.security import OAuth2PasswordRequestForm
 
-from ..auth import get_current_user
-from ..database import supabase
-from ..models import Register, Token, User
+from ...db import database
+from ...models.models import Message, Register, Token, User
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+
+async def get_current_user(authorization: str = Header(...)) -> User:
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, 
+            detail="Invalid authentication scheme"
+        )
+    
+    token = authorization.split(" ")[1]
+    try:
+        res = database.supabase.auth.get_user(token)
+        usr = res.user
+        return User(id=usr.id, username=usr.user_metadata.get("username", ""))
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, 
+            detail="Invalid token"
+        )
 
 
 @router.post("/token", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     try:
-        resp = supabase.auth.sign_in_with_password({
+        resp = database.supabase.auth.sign_in_with_password({
             "email": form_data.username,
             "password": form_data.password
         })
@@ -39,10 +57,10 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
         )
 
 
-@router.post("/register")
+@router.post("/register", response_model=Message)
 async def register_user(data: Register):
     try:
-        resp = supabase.auth.sign_up({
+        resp = database.supabase.auth.sign_up({
             "email": data.email,
             "password": data.password,
             "options": {
@@ -57,9 +75,9 @@ async def register_user(data: Register):
         else:
             err = getattr(resp, "error", None)
             detail = err.message if err else "Registration failed"
-            raise HTTPException(status_code=400, detail=detail)
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.get("/me", response_model=User)
