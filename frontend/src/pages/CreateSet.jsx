@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { uploadImages } from '../services/api';
+import { api } from '../api';
 
 const CreateSet = () => {
   const [files, setFiles] = useState([]);
@@ -23,7 +23,12 @@ const CreateSet = () => {
     setError('');
 
     try {
-      const response = await uploadImages(files);
+      const formData = new FormData();
+      files.forEach(file => {
+        formData.append('files', file);
+      });
+      
+      const response = await api.uploadImages(formData, null); // Note: token should be added when auth is implemented
       // Navigate to the newly created set
       navigate('/dashboard');
     } catch (err) {

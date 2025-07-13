@@ -1,4 +1,3 @@
-# Transcription prompt
 TRANSCRIPT_PROMPT = """You will be given an image containing text in various languages. Your task is to transcribe all the content in the image accurately.
 
 Please follow these instructions carefully:
@@ -24,8 +23,7 @@ Please follow these instructions carefully:
 
 Please proceed with the transcription based on the provided image."""
 
-# Flashcard prompt template
-FLASHCARD_PROMPT = '''You are an expert in creating Chinese language learning flashcards. Your task is to generate flashcards from the given Chinese content and output them in JSON format. Here's the content you'll be working with:
+FLASHCARD_PROMPT = """You are an expert in creating Chinese language learning flashcards. Your task is to generate flashcards from the given Chinese content and output them in JSON format. Here's the content you'll be working with:
 
 <chinese_content>
 {CONTENT}
@@ -41,4 +39,4 @@ Create the flashcards following these guidelines:
    - "front": The Chinese characters
    - "back": The Pinyin and English meaning
 
-Your entire output must be valid JSON. Do not include any additional text, explanations, or commentary outside of the JSON structure.'''
+Your entire output must be valid JSON. Do not include any additional text, explanations, or commentary outside of the JSON structure."""

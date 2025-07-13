@@ -1,14 +1,30 @@
+# Web Framework
 fastapi
-uvicorn
-python-multipart
+uvicorn[standard]
+
+# Authentication & Security
 python-jose[cryptography]
 passlib[bcrypt]
-python-dotenv
-openai
-pydantic
 cryptography
+
+# File Handling
+python-multipart
+
+# Configuration
+python-dotenv
+pydantic
+pydantic-settings
+
+# Database
 sqlalchemy
 alembic
 supabase
-typing-extensions
+
+# AI Services
+openai
+
+# HTTP Client
 httpx
+
+# Type Support
+typing-extensions
