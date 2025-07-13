@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../services/api';
-import FlashcardSetCard from './FlashcardSetCard';
+import FlashcardSetCard from '../components/FlashcardSetCard';
 
 function FlashcardSets() {
   const [sets, setSets] = useState([]);

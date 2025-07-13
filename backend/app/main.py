@@ -2,8 +2,7 @@ import os
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .core.config import settings
-from .api.routers import auth, flashcards, upload
+from .api.routers import auth, flashcards, upload, reviews, sessions
 
 app = FastAPI(title="Flashcard Maker API", version="1.0.0")
 
@@ -25,6 +24,8 @@ api_router = APIRouter(prefix="/v1")
 api_router.include_router(auth.router)
 api_router.include_router(upload.router)
 api_router.include_router(flashcards.router)
+api_router.include_router(reviews.router)
+api_router.include_router(sessions.router)
 
 app.include_router(api_router)
 

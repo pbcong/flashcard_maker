@@ -13,18 +13,46 @@ function FlashcardSetView() {
   const [isFlipped, setIsFlipped] = useState(false)
   const [isShuffled, setIsShuffled] = useState(false)
   const [viewedCards, setViewedCards] = useState(new Set())
+  const [studySession, setStudySession] = useState(null)
+  const [sessionStats, setSessionStats] = useState({
+    cardsStudied: 0,
+    correctAnswers: 0,
+    startTime: null,
+    cardStartTime: null
+  })
+  const [progress, setProgress] = useState(null)
   const { token } = useAuth()
 
   useEffect(() => {
     fetchSet()
+    startStudySession()
   }, [setId, token])
 
   useEffect(() => {
     // Add current card to viewed cards when it changes
     if (set?.flashcards) {
       setViewedCards(prev => new Set([...prev, currentCardIndex]))
+      // Reset card start time when moving to new card
+      setSessionStats(prev => ({
+        ...prev,
+        cardStartTime: Date.now()
+      }))
     }
   }, [currentCardIndex])
+
+  const startStudySession = async () => {
+    try {
+      const session = await api.startStudySession(setId, token)
+      setStudySession(session)
+      setSessionStats(prev => ({
+        ...prev,
+        startTime: Date.now(),
+        cardStartTime: Date.now()
+      }))
+    } catch (err) {
+      console.error('Failed to start study session:', err)
+    }
+  }
 
   const fetchSet = async () => {
     try {
@@ -32,10 +60,48 @@ function FlashcardSetView() {
       setSet(data)
       // Reset viewed cards when fetching new set
       setViewedCards(new Set([0]))
+      
+      // Fetch progress data
+      const progressData = await api.getStudyProgress(setId, token)
+      setProgress(progressData)
     } catch (err) {
       setError(err.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleAnswer = async (wasCorrect) => {
+    if (!studySession || !sessionStats.cardStartTime) return
+
+    const responseTime = Date.now() - sessionStats.cardStartTime
+    const currentCard = set.flashcards[currentCardIndex]
+
+    try {
+      // Record the card review
+      await api.recordCardReview({
+        user_id: '', // Will be set by backend
+        card_id: currentCard.id,
+        session_id: studySession.id,
+        was_correct: wasCorrect,
+        response_time_ms: responseTime
+      }, token)
+
+      // Update session stats
+      setSessionStats(prev => ({
+        ...prev,
+        cardsStudied: prev.cardsStudied + 1,
+        correctAnswers: prev.correctAnswers + (wasCorrect ? 1 : 0),
+        cardStartTime: Date.now()
+      }))
+
+      // Move to next card
+      if (currentCardIndex < set.flashcards.length - 1) {
+        setCurrentCardIndex(currentCardIndex + 1)
+        setIsFlipped(false)
+      }
+    } catch (err) {
+      console.error('Failed to record answer:', err)
     }
   }
 
@@ -46,8 +112,13 @@ function FlashcardSetView() {
     setCurrentCardIndex(0)
     setIsFlipped(false)
     setIsShuffled(true)
-    // Reset viewed cards when shuffling
+    // Keep session stats - just reordering cards, not starting over
     setViewedCards(new Set([0]))
+    // Reset card start time for the first card in new order
+    setSessionStats(prev => ({
+      ...prev,
+      cardStartTime: Date.now()
+    }))
   }
 
   const handleRestart = () => {
@@ -59,6 +130,9 @@ function FlashcardSetView() {
     }
     // Reset viewed cards when restarting
     setViewedCards(new Set([0]))
+    
+    // Start completely fresh session
+    startStudySession()
   }
 
   const nextCard = () => {
@@ -138,6 +212,22 @@ function FlashcardSetView() {
           <h1 className="text-3xl font-bold text-gray-900">{set.title}</h1>
           <div className="mt-2 space-y-2">
             <p className="text-gray-600">Card {currentCardIndex + 1} of {set.flashcards.length}</p>
+            
+            {/* Progress Display */}
+            {progress && (
+              <div className="flex space-x-4 text-sm text-gray-600">
+                <span>Know Rate: {progress.know_rate}%</span>
+                <span>Cards Studied: {progress.cards_studied}/{progress.total_cards}</span>
+                <span>Total Reviews: {progress.total_reviews}</span>
+              </div>
+            )}
+            
+            {/* Session Stats */}
+            <div className="flex space-x-4 text-sm text-blue-600">
+              <span>Session: {sessionStats.cardsStudied} cards</span>
+              <span>Accuracy: {sessionStats.cardsStudied > 0 ? Math.round((sessionStats.correctAnswers / sessionStats.cardsStudied) * 100) : 0}%</span>
+            </div>
+            
             <div className="w-full bg-gray-200 h-1 rounded-full">
               <div 
                 className="bg-black h-1 rounded-full transition-all duration-300 ease-in-out" 
@@ -151,6 +241,7 @@ function FlashcardSetView() {
           <button
             onClick={handleShuffle}
             className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
+            title="Shuffle card order (keeps session progress)"
           >
             <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 15l-3-3m0 0l-3 3m3-3v12M6.5 7l1-1m0 0l1-1M7.5 6l-1 1m0 0l-1 1M4 4v7h7M4 4h7" />
@@ -160,6 +251,7 @@ function FlashcardSetView() {
           <button
             onClick={handleRestart}
             className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
+            title="Start over with fresh session"
           >
             <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -207,8 +299,9 @@ function FlashcardSetView() {
 
           <div className="flex space-x-4">
             <button
-              onClick={() => {/* Handle "I know this" */}}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+              onClick={() => handleAnswer(true)}
+              disabled={!isFlipped}
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <svg className="w-5 h-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -216,8 +309,9 @@ function FlashcardSetView() {
               I know this
             </button>
             <button
-              onClick={() => {/* Handle "Still learning" */}}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+              onClick={() => handleAnswer(false)}
+              disabled={!isFlipped}
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <svg className="w-5 h-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />

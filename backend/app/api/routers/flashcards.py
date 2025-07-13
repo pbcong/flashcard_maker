@@ -3,7 +3,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 
 from ...db import database
-from ...models.models import FlashcardSet, User
+from ...models.models import FlashcardSet, User, StudySession, StudyProgress
 from .auth import get_current_user
 
 router = APIRouter(prefix="/flashcard-sets", tags=["Flashcard Sets"])
@@ -66,6 +66,31 @@ async def create_flashcard_set(
 ):
     try:
         result = database.create_flashcard_set(data, current_user.id)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Progress tracking endpoints
+@router.post("/{set_id}/study-session", response_model=StudySession)
+async def start_study_session(
+    set_id: int,
+    current_user: User = Depends(get_current_user)
+):
+    try:
+        result = database.start_study_session(set_id, current_user.id)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{set_id}/progress", response_model=StudyProgress)
+async def get_study_progress(
+    set_id: int,
+    current_user: User = Depends(get_current_user)
+):
+    try:
+        result = database.get_study_progress(set_id, current_user.id)
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

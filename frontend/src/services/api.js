@@ -1,4 +1,5 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE = `${API_URL}/v1`;
 
 export const api = {
   async login(email, password) {
@@ -6,7 +7,7 @@ export const api = {
     formData.append('username', email);
     formData.append('password', password);
 
-    const response = await fetch(`${API_URL}/token`, {
+    const response = await fetch(`${API_BASE}/auth/token`, {
       method: 'POST',
       body: formData,
     });
@@ -20,7 +21,7 @@ export const api = {
   },
 
   async register(email, password, username) {
-    const response = await fetch(`${API_URL}/register`, {
+    const response = await fetch(`${API_BASE}/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -37,7 +38,7 @@ export const api = {
   },
 
   async getCurrentUser(token) {
-    const response = await fetch(`${API_URL}/users/me`, {
+    const response = await fetch(`${API_BASE}/auth/me`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -51,7 +52,7 @@ export const api = {
   },
 
   async uploadImages(formData, token) {
-    const response = await fetch(`${API_URL}/upload`, {
+    const response = await fetch(`${API_BASE}/upload`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -68,7 +69,7 @@ export const api = {
   },
 
   async getFlashcardSets(token) {
-    const response = await fetch(`${API_URL}/flashcard-sets`, {
+    const response = await fetch(`${API_BASE}/flashcard-sets`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -82,7 +83,7 @@ export const api = {
   },
 
   async getFlashcardSet(setId, token) {
-    const response = await fetch(`${API_URL}/flashcard-sets/${setId}`, {
+    const response = await fetch(`${API_BASE}/flashcard-sets/${setId}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -96,7 +97,7 @@ export const api = {
   },
 
   async deleteFlashcardSet(setId, token) {
-    const response = await fetch(`${API_URL}/flashcard-sets/${setId}`, {
+    const response = await fetch(`${API_BASE}/flashcard-sets/${setId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -111,7 +112,7 @@ export const api = {
   },
 
   async updateFlashcardSet(setId, data, token) {
-    const response = await fetch(`${API_URL}/flashcard-sets/${setId}`, {
+    const response = await fetch(`${API_BASE}/flashcard-sets/${setId}`, {
       method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -128,7 +129,7 @@ export const api = {
   },
 
   async createFlashcardSet(data, token) {
-    const response = await fetch(`${API_URL}/flashcard-sets`, {
+    const response = await fetch(`${API_BASE}/flashcard-sets`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -144,4 +145,68 @@ export const api = {
 
     return response.json();
   },
-}; 
+
+  // Progress tracking methods
+  async startStudySession(setId, token) {
+    const response = await fetch(`${API_BASE}/flashcard-sets/${setId}/study-session`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to start study session');
+    }
+
+    return response.json();
+  },
+
+  async endStudySession(sessionId, data, token) {
+    const response = await fetch(`${API_BASE}/study-session/${sessionId}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to end study session');
+    }
+
+    return response.json();
+  },
+
+  async recordCardReview(reviewData, token) {
+    const response = await fetch(`${API_BASE}/card-review`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(reviewData),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to record review');
+    }
+
+    return response.json();
+  },
+
+  async getStudyProgress(setId, token) {
+    const response = await fetch(`${API_BASE}/flashcard-sets/${setId}/progress`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to get progress');
+    }
+
+    return response.json();
+  },
+};

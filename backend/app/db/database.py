@@ -1,4 +1,5 @@
 from typing import List, Optional
+from datetime import datetime
 
 from supabase import Client, create_client
 
@@ -111,3 +112,105 @@ def update_flashcard_set(set_id: int, data: dict, user_id: str) -> dict:
         raise Exception("Failed to fetch updated flashcard set")
     
     return result.data[0]
+
+
+# Progress tracking functions
+def start_study_session(set_id: int, user_id: str) -> dict:
+    """Start a new study session"""
+    session_data = {
+        "user_id": user_id,
+        "set_id": set_id,
+        "started_at": datetime.now().isoformat(),
+        "cards_studied": 0,
+        "correct_answers": 0,
+        "total_time_seconds": 0
+    }
+    
+    result = supabase.table("study_sessions").insert(session_data).execute()
+    if not result.data:
+        raise Exception("Failed to start study session")
+    
+    return result.data[0]
+
+
+def end_study_session(session_id: int, data: dict, user_id: str) -> dict:
+    """End a study session with final stats"""
+    update_data = {
+        "ended_at": datetime.now().isoformat(),
+        "cards_studied": data.get("cards_studied", 0),
+        "correct_answers": data.get("correct_answers", 0),
+        "total_time_seconds": data.get("total_time_seconds", 0)
+    }
+    
+    result = supabase.table("study_sessions").update(update_data).eq(
+        "id", session_id
+    ).eq("user_id", user_id).execute()
+    
+    if not result.data:
+        raise Exception("Failed to end study session")
+    
+    return {"message": "Study session ended successfully"}
+
+
+def record_card_review(review) -> dict:
+    """Record a card review (Know/Don't Know)"""
+    review_data = {
+        "user_id": review.user_id,
+        "card_id": review.card_id,
+        "session_id": review.session_id,
+        "was_correct": review.was_correct,
+        "response_time_ms": review.response_time_ms,
+        "reviewed_at": datetime.now().isoformat()
+    }
+    
+    result = supabase.table("card_reviews").insert(review_data).execute()
+    if not result.data:
+        raise Exception("Failed to record card review")
+    
+    return result.data[0]
+
+
+def get_study_progress(set_id: int, user_id: str) -> dict:
+    """Get study progress for a flashcard set"""
+    # Get total cards in set
+    set_result = supabase.table("flashcard_sets").select(
+        "id, flashcards(id)"
+    ).eq("id", set_id).eq("owner_id", user_id).execute()
+    
+    if not set_result.data:
+        raise Exception("Flashcard set not found")
+    
+    total_cards = len(set_result.data[0].get("flashcards", []))
+    
+    # Get reviews for this set
+    reviews_result = supabase.table("card_reviews").select(
+        "card_id, was_correct, reviewed_at"
+    ).eq("user_id", user_id).execute()
+    
+    reviews = reviews_result.data if reviews_result.data else []
+    
+    # Calculate stats
+    set_card_ids = [card["id"] for card in set_result.data[0].get("flashcards", [])]
+    set_reviews = [r for r in reviews if r["card_id"] in set_card_ids]
+    
+    cards_studied = len(set(r["card_id"] for r in set_reviews))
+    total_reviews = len(set_reviews)
+    correct_reviews = len([r for r in set_reviews if r["was_correct"]])
+    
+    know_rate = (correct_reviews / total_reviews) * 100 if total_reviews > 0 else 0
+    
+    # Get last studied date
+    last_studied = None
+    if set_reviews:
+        last_studied = max(r["reviewed_at"] for r in set_reviews)
+    
+    return {
+        "set_id": set_id,
+        "total_cards": total_cards,
+        "cards_studied": cards_studied,
+        "cards_known": correct_reviews,
+        "know_rate": round(know_rate, 1),
+        "total_reviews": total_reviews,
+        "last_studied_at": last_studied,
+        "study_streak": 0  # TODO: Implement streak calculation
+    }
