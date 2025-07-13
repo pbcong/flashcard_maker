@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import PropTypes from 'prop-types';
 
 function FlashcardSetCard({ set, handleDelete }) {
   const [activeMenu, setActiveMenu] = useState(false);
@@ -83,5 +84,16 @@ function FlashcardSetCard({ set, handleDelete }) {
     </div>
   );
 }
+
+FlashcardSetCard.propTypes = {
+  set: PropTypes.shape({
+    id: PropTypes.number.isRequired,
+    title: PropTypes.string.isRequired,
+    description: PropTypes.string,
+    flashcards: PropTypes.array,
+    lastStudied: PropTypes.string,
+  }).isRequired,
+  handleDelete: PropTypes.func.isRequired,
+};
 
 export default FlashcardSetCard;

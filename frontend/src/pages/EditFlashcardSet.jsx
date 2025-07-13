@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../services/api';
@@ -13,11 +13,7 @@ function EditFlashcardSet() {
   const [error, setError] = useState('');
   const { token } = useAuth();
 
-  useEffect(() => {
-    fetchSet();
-  }, [setId, token]);
-
-  const fetchSet = async () => {
+  const fetchSet = useCallback(async () => {
     try {
       const data = await api.getFlashcardSet(setId, token);
       setTitle(data.title);
@@ -28,7 +24,12 @@ function EditFlashcardSet() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [setId, token]);
+
+  useEffect(() => {
+    fetchSet();
+  }, [fetchSet]);
+
 
   const handleAddCard = () => {
     setCards([...cards, { front: '', back: '' }]);

@@ -1,11 +1,10 @@
-import { useState, useEffect } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useState, useEffect, useCallback } from 'react'
+import { useParams, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { api } from '../services/api';
 
 function FlashcardSetView() {
   const { setId } = useParams()
-  const navigate = useNavigate()
   const [set, setSet] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -23,38 +22,7 @@ function FlashcardSetView() {
   const [progress, setProgress] = useState(null)
   const { token } = useAuth()
 
-  useEffect(() => {
-    fetchSet()
-    startStudySession()
-  }, [setId, token])
-
-  useEffect(() => {
-    // Add current card to viewed cards when it changes
-    if (set?.flashcards) {
-      setViewedCards(prev => new Set([...prev, currentCardIndex]))
-      // Reset card start time when moving to new card
-      setSessionStats(prev => ({
-        ...prev,
-        cardStartTime: Date.now()
-      }))
-    }
-  }, [currentCardIndex])
-
-  const startStudySession = async () => {
-    try {
-      const session = await api.startStudySession(setId, token)
-      setStudySession(session)
-      setSessionStats(prev => ({
-        ...prev,
-        startTime: Date.now(),
-        cardStartTime: Date.now()
-      }))
-    } catch (err) {
-      console.error('Failed to start study session:', err)
-    }
-  }
-
-  const fetchSet = async () => {
+  const fetchSet = useCallback(async () => {
     try {
       const data = await api.getFlashcardSet(setId, token)
       setSet(data)
@@ -69,7 +37,39 @@ function FlashcardSetView() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [setId, token]);
+
+  const startStudySession = useCallback(async () => {
+    try {
+      const session = await api.startStudySession(setId, token)
+      setStudySession(session)
+      setSessionStats(prev => ({
+        ...prev,
+        startTime: Date.now(),
+        cardStartTime: Date.now()
+      }))
+    } catch (err) {
+      console.error('Failed to start study session:', err)
+    }
+  }, [setId, token]);
+
+  useEffect(() => {
+    fetchSet()
+    startStudySession()
+  }, [fetchSet, startStudySession])
+
+  useEffect(() => {
+    // Add current card to viewed cards when it changes
+    if (set?.flashcards) {
+      setViewedCards(prev => new Set([...prev, currentCardIndex]))
+      // Reset card start time when moving to new card
+      setSessionStats(prev => ({
+        ...prev,
+        cardStartTime: Date.now()
+      }))
+    }
+  }, [currentCardIndex, set?.flashcards])
+
 
   const handleAnswer = async (wasCorrect) => {
     if (!studySession || !sessionStats.cardStartTime) return
@@ -112,9 +112,9 @@ function FlashcardSetView() {
     setCurrentCardIndex(0)
     setIsFlipped(false)
     setIsShuffled(true)
-    // Keep session stats - just reordering cards, not starting over
+    // Reset viewed cards when shuffling
     setViewedCards(new Set([0]))
-    // Reset card start time for the first card in new order
+    // Reset card start time
     setSessionStats(prev => ({
       ...prev,
       cardStartTime: Date.now()
@@ -130,9 +130,6 @@ function FlashcardSetView() {
     }
     // Reset viewed cards when restarting
     setViewedCards(new Set([0]))
-    
-    // Start completely fresh session
-    startStudySession()
   }
 
   const nextCard = () => {
@@ -241,7 +238,6 @@ function FlashcardSetView() {
           <button
             onClick={handleShuffle}
             className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
-            title="Shuffle card order (keeps session progress)"
           >
             <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 15l-3-3m0 0l-3 3m3-3v12M6.5 7l1-1m0 0l1-1M7.5 6l-1 1m0 0l-1 1M4 4v7h7M4 4h7" />
@@ -251,7 +247,6 @@ function FlashcardSetView() {
           <button
             onClick={handleRestart}
             className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
-            title="Start over with fresh session"
           >
             <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />

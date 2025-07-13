@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import Navbar from '../components/Navbar'
 
 export default function AuthenticatedLayout({ children }) {
@@ -8,3 +9,7 @@ export default function AuthenticatedLayout({ children }) {
     </>
   )
 }
+
+AuthenticatedLayout.propTypes = {
+  children: PropTypes.node.isRequired,
+};

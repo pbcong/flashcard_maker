@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../services/api';
 import FlashcardSetCard from '../components/FlashcardSetCard';
@@ -10,11 +10,7 @@ function FlashcardSets() {
   const [searchQuery, setSearchQuery] = useState('');
   const { token } = useAuth();
 
-  useEffect(() => {
-    fetchSets();
-  }, [token]);
-
-  const fetchSets = async () => {
+  const fetchSets = useCallback(async () => {
     try {
       const data = await api.getFlashcardSets(token);
       setSets(data);
@@ -23,7 +19,12 @@ function FlashcardSets() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    fetchSets();
+  }, [fetchSets]);
+
 
   const handleDelete = async (setId) => {
     if (!window.confirm('Are you sure you want to delete this set?')) return;

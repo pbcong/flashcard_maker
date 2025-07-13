@@ -1,10 +1,8 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { useState } from 'react';
 
 function Navbar() {
   const { logout } = useAuth();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
     <nav className="bg-white shadow-lg">
