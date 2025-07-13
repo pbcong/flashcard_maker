@@ -30,7 +30,7 @@ function Login() {
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <h1 className="text-center text-3xl font-bold text-gray-900 mb-2">Welcome back</h1>
         <p className="text-center text-sm text-gray-600 mb-8">
-          Don't have an account?{' '}
+          Don&apos;t have an account?{' '}
           <Link to="/register" className="font-medium text-black hover:text-gray-800">
             Sign up
           </Link>
