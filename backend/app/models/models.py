@@ -44,22 +44,13 @@ class Message(BaseModel):
 
 
 # Progress tracking models
-class StudySession(BaseModel):
-    id: Optional[int] = None
-    user_id: str
-    set_id: int
-    started_at: Optional[datetime] = None
-    ended_at: Optional[datetime] = None
-    cards_studied: int = 0
-    correct_answers: int = 0
-    total_time_seconds: int = 0
+
 
 
 class CardReview(BaseModel):
     id: Optional[int] = None
     user_id: str
     card_id: int
-    session_id: int
     was_correct: bool
     response_time_ms: int
     reviewed_at: Optional[datetime] = None

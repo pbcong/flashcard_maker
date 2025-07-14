@@ -28,3 +28,4 @@ httpx
 
 # Type Support
 typing-extensions
+pypdf

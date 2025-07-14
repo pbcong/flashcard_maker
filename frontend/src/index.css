@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+body {
+  padding-top: 80px;
+}
+
 @layer utilities {
   .perspective-1000 {
     perspective: 1000px;
