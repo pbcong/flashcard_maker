@@ -13,7 +13,7 @@ function FlashcardSetView() {
   const [isShuffled, setIsShuffled] = useState(false)
   const [viewedCards, setViewedCards] = useState(new Set())
   
-  const [progress, setProgress] = useState(null)
+  
   const { token } = useAuth()
 
   const fetchSet = useCallback(async () => {
@@ -23,9 +23,7 @@ function FlashcardSetView() {
       // Reset viewed cards when fetching new set
       setViewedCards(new Set([0]))
       
-      // Fetch progress data
-      const progressData = await api.getStudyProgress(setId, token)
-      setProgress(progressData)
+      
     } catch (err) {
       setError(err.message)
     } finally {
@@ -36,6 +34,10 @@ function FlashcardSetView() {
   
 
   
+
+  useEffect(() => {
+    fetchSet()
+  }, [fetchSet])
 
   useEffect(() => {
     // Add current card to viewed cards when it changes
@@ -81,11 +83,7 @@ function FlashcardSetView() {
     setIsShuffled(true)
     // Reset viewed cards when shuffling
     setViewedCards(new Set([0]))
-    // Reset card start time
-    setSessionStats(prev => ({
-      ...prev,
-      cardStartTime: Date.now()
-    }))
+    
   }
 
   const handleRestart = () => {

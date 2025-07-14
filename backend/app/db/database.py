@@ -114,42 +114,7 @@ def update_flashcard_set(set_id: int, data: dict, user_id: str) -> dict:
     return result.data[0]
 
 
-# Progress tracking functions
-def start_study_session(set_id: int, user_id: str) -> dict:
-    """Start a new study session"""
-    session_data = {
-        "user_id": user_id,
-        "set_id": set_id,
-        "started_at": datetime.now().isoformat(),
-        "cards_studied": 0,
-        "correct_answers": 0,
-        "total_time_seconds": 0
-    }
-    
-    result = supabase.table("study_sessions").insert(session_data).execute()
-    if not result.data:
-        raise Exception("Failed to start study session")
-    
-    return result.data[0]
 
-
-def end_study_session(session_id: int, data: dict, user_id: str) -> dict:
-    """End a study session with final stats"""
-    update_data = {
-        "ended_at": datetime.now().isoformat(),
-        "cards_studied": data.get("cards_studied", 0),
-        "correct_answers": data.get("correct_answers", 0),
-        "total_time_seconds": data.get("total_time_seconds", 0)
-    }
-    
-    result = supabase.table("study_sessions").update(update_data).eq(
-        "id", session_id
-    ).eq("user_id", user_id).execute()
-    
-    if not result.data:
-        raise Exception("Failed to end study session")
-    
-    return {"message": "Study session ended successfully"}
 
 
 def record_card_review(review) -> dict:
@@ -157,7 +122,6 @@ def record_card_review(review) -> dict:
     review_data = {
         "user_id": review.user_id,
         "card_id": review.card_id,
-        "session_id": review.session_id,
         "was_correct": review.was_correct,
         "response_time_ms": review.response_time_ms,
         "reviewed_at": datetime.now().isoformat()

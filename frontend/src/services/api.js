@@ -148,38 +148,7 @@ export const api = {
     return response.json();
   },
 
-  // Progress tracking methods
-  async startStudySession(setId, token) {
-    const response = await fetch(`${API_BASE}/flashcard-sets/${setId}/study-session`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to start study session');
-    }
-
-    return response.json();
-  },
-
-  async endStudySession(sessionId, data, token) {
-    const response = await fetch(`${API_BASE}/study-session/${sessionId}`, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to end study session');
-    }
-
-    return response.json();
-  },
+  
 
   async recordCardReview(reviewData, token) {
     const response = await fetch(`${API_BASE}/card-review`, {
@@ -193,20 +162,6 @@ export const api = {
 
     if (!response.ok) {
       throw new Error('Failed to record review');
-    }
-
-    return response.json();
-  },
-
-  async getStudyProgress(setId, token) {
-    const response = await fetch(`${API_BASE}/flashcard-sets/${setId}/progress`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to get progress');
     }
 
     return response.json();
