@@ -166,4 +166,35 @@ export const api = {
 
     return response.json();
   },
+
+  async getDueCards(setId, token) {
+    const response = await fetch(`${API_BASE}/reviews/due/${setId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch due cards');
+    }
+
+    return response.json();
+  },
+
+  async submitReview(reviewData, token) {
+    const response = await fetch(`${API_BASE}/reviews`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(reviewData),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to submit review');
+    }
+
+    return response.json();
+  },
 };
