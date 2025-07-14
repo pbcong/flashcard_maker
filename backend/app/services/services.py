@@ -78,3 +78,27 @@ async def process_images_to_flashcards(images: List[bytes]) -> FlashcardResponse
         transcription=content,
         flashcards=[Flashcard(**card) for card in flashcards_data]
     )
+
+async def process_text_to_flashcards(text_content: str) -> FlashcardResponse:
+    flashcard_prompt = create_flashcard_message(text_content)
+    
+    flashcards = client.chat.completions.create(
+        model=settings.openai_model,
+        messages=[flashcard_prompt],
+        temperature=0.3,
+        max_tokens=1024
+    )
+    
+    flashcards_json = flashcards.choices[0].message.content
+    if flashcards_json.startswith("```json"):
+        flashcards_json = flashcards_json[7:-3]
+    
+    try:
+        flashcards_data = json.loads(flashcards_json)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Failed to parse flashcards data: {str(e)}")
+    
+    return FlashcardResponse(
+        transcription=text_content,
+        flashcards=[Flashcard(**card) for card in flashcards_data]
+    )

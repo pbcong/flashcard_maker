@@ -12,13 +12,7 @@ function FlashcardSetView() {
   const [isFlipped, setIsFlipped] = useState(false)
   const [isShuffled, setIsShuffled] = useState(false)
   const [viewedCards, setViewedCards] = useState(new Set())
-  const [studySession, setStudySession] = useState(null)
-  const [sessionStats, setSessionStats] = useState({
-    cardsStudied: 0,
-    correctAnswers: 0,
-    startTime: null,
-    cardStartTime: null
-  })
+  
   const [progress, setProgress] = useState(null)
   const { token } = useAuth()
 
@@ -39,42 +33,22 @@ function FlashcardSetView() {
     }
   }, [setId, token]);
 
-  const startStudySession = useCallback(async () => {
-    try {
-      const session = await api.startStudySession(setId, token)
-      setStudySession(session)
-      setSessionStats(prev => ({
-        ...prev,
-        startTime: Date.now(),
-        cardStartTime: Date.now()
-      }))
-    } catch (err) {
-      console.error('Failed to start study session:', err)
-    }
-  }, [setId, token]);
+  
 
-  useEffect(() => {
-    fetchSet()
-    startStudySession()
-  }, [fetchSet, startStudySession])
+  
 
   useEffect(() => {
     // Add current card to viewed cards when it changes
     if (set?.flashcards) {
       setViewedCards(prev => new Set([...prev, currentCardIndex]))
-      // Reset card start time when moving to new card
-      setSessionStats(prev => ({
-        ...prev,
-        cardStartTime: Date.now()
-      }))
+      
     }
   }, [currentCardIndex, set?.flashcards])
 
 
   const handleAnswer = async (wasCorrect) => {
-    if (!studySession || !sessionStats.cardStartTime) return
 
-    const responseTime = Date.now() - sessionStats.cardStartTime
+    const responseTime = 1000
     const currentCard = set.flashcards[currentCardIndex]
 
     try {
@@ -82,18 +56,11 @@ function FlashcardSetView() {
       await api.recordCardReview({
         user_id: '', // Will be set by backend
         card_id: currentCard.id,
-        session_id: studySession.id,
         was_correct: wasCorrect,
         response_time_ms: responseTime
       }, token)
 
-      // Update session stats
-      setSessionStats(prev => ({
-        ...prev,
-        cardsStudied: prev.cardsStudied + 1,
-        correctAnswers: prev.correctAnswers + (wasCorrect ? 1 : 0),
-        cardStartTime: Date.now()
-      }))
+      
 
       // Move to next card
       if (currentCardIndex < set.flashcards.length - 1) {
@@ -210,20 +177,7 @@ function FlashcardSetView() {
           <div className="mt-2 space-y-2">
             <p className="text-gray-600">Card {currentCardIndex + 1} of {set.flashcards.length}</p>
             
-            {/* Progress Display */}
-            {progress && (
-              <div className="flex space-x-4 text-sm text-gray-600">
-                <span>Know Rate: {progress.know_rate}%</span>
-                <span>Cards Studied: {progress.cards_studied}/{progress.total_cards}</span>
-                <span>Total Reviews: {progress.total_reviews}</span>
-              </div>
-            )}
             
-            {/* Session Stats */}
-            <div className="flex space-x-4 text-sm text-blue-600">
-              <span>Session: {sessionStats.cardsStudied} cards</span>
-              <span>Accuracy: {sessionStats.cardsStudied > 0 ? Math.round((sessionStats.correctAnswers / sessionStats.cardsStudied) * 100) : 0}%</span>
-            </div>
             
             <div className="w-full bg-gray-200 h-1 rounded-full">
               <div 
@@ -239,8 +193,9 @@ function FlashcardSetView() {
             onClick={handleShuffle}
             className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
           >
-            <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 15l-3-3m0 0l-3 3m3-3v12M6.5 7l1-1m0 0l1-1M7.5 6l-1 1m0 0l-1 1M4 4v7h7M4 4h7" />
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-shuffle mr-2" viewBox="0 0 16 16">
+              <path fillRule="evenodd" d="M0 3.5A.5.5 0 0 1 .5 3H1c2.202 0 3.827 1.24 4.874 2.418.49.552.865 1.102 1.126 1.532.26-.43.636-.98 1.126-1.532C9.173 4.24 10.798 3 13 3v1c-1.798 0-3.173 1.01-4.126 2.082A9.6 9.6 0 0 0 7.556 8a9.6 9.6 0 0 0 1.317 1.918C9.828 10.99 11.204 12 13 12v1c-2.202 0-3.827-1.24-4.874-2.418A10.6 10.6 0 0 1 7 9.05c-.26.43-.636.98-1.126 1.532C4.827 11.76 3.202 13 1 13H.5a.5.5 0 0 1 0-1H1c1.798 0 3.173-1.01 4.126-2.082A9.6 9.6 0 0 0 6.444 8a9.6 9.6 0 0 0-1.317-1.918C4.172 5.01 2.796 4 1 4H.5a.5.5 0 0 1-.5-.5"/>
+              <path d="M13 5.466V1.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192m0 9v-3.932a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192"/>
             </svg>
             Shuffle
           </button>

@@ -1,5 +1,5 @@
 const API_URL = import.meta.env.VITE_API_URL;
-const API_BASE = API_URL;
+const API_BASE = `${API_URL}/v1`;
 
 console.log('API Configuration:', { API_URL, API_BASE });
 
@@ -53,7 +53,7 @@ export const api = {
     return response.json();
   },
 
-  async uploadImages(formData, token) {
+  async uploadFiles(formData, token) {
     const response = await fetch(`${API_BASE}/upload`, {
       method: 'POST',
       headers: {

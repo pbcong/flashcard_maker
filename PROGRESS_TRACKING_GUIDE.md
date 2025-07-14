@@ -52,10 +52,8 @@ For each card interaction:
    ```
 
 2. **Real-time Feedback**:
-   - Session accuracy percentage
    - Cards studied in current session
    - Overall progress from past sessions
-   - Know rate for the set
 
 3. **Minimal Friction**:
    - Only 2 buttons (Know/Don't Know)
@@ -134,9 +132,7 @@ The foundation is now set for:
 
 With the simple Know/Don't Know data, you can build sophisticated features:
 
-- **Mastery Calculation**: `know_rate + consistency_bonus + speed_factor`
 - **Review Intervals**: Spaced repetition based on consecutive "knows"
-- **Difficulty Estimation**: Cards with low know rates need more practice
 - **Personalized Order**: Show hardest cards first
 
 The beauty is that users only see 2 simple buttons, but you get rich data for smart algorithms!

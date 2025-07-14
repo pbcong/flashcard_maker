@@ -6,28 +6,35 @@ import { api } from '../services/api';
 function CreateFlashcardSet() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [selectedImages, setSelectedImages] = useState([]);
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [previewUrls, setPreviewUrls] = useState([]);
+  const [filePreviews, setFilePreviews] = useState([]);
   const { token } = useAuth();
   const navigate = useNavigate();
 
-  const handleImageSelect = (e) => {
+  const handleFileSelect = (e) => {
     const files = Array.from(e.target.files);
-    setSelectedImages(prev => [...prev, ...files]);
+    setSelectedFiles(prev => [...prev, ...files]);
     
-    // Create preview URLs
-    const newPreviewUrls = files.map(file => URL.createObjectURL(file));
-    setPreviewUrls(prev => [...prev, ...newPreviewUrls]);
+    const newFilePreviews = files.map(file => {
+      if (file.type.startsWith('image/')) {
+        return { url: URL.createObjectURL(file), type: 'image' };
+      } else {
+        return { name: file.name, type: 'file' };
+      }
+    });
+    setFilePreviews(prev => [...prev, ...newFilePreviews]);
   };
 
-  const handleRemoveImage = (index) => {
-    setSelectedImages(prev => prev.filter((_, i) => i !== index));
-    setPreviewUrls(prev => {
-      const newUrls = [...prev];
-      URL.revokeObjectURL(newUrls[index]);
-      return newUrls.filter((_, i) => i !== index);
+  const handleRemoveFile = (index) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+    setFilePreviews(prev => {
+      const newPreviews = [...prev];
+      if (newPreviews[index].type === 'image') {
+        URL.revokeObjectURL(newPreviews[index].url);
+      }
+      return newPreviews.filter((_, i) => i !== index);
     });
   };
 
@@ -38,8 +45,8 @@ function CreateFlashcardSet() {
       return;
     }
 
-    if (selectedImages.length === 0) {
-      setError('Please select at least one image');
+    if (selectedFiles.length === 0) {
+      setError('Please select at least one file');
       return;
     }
 
@@ -47,16 +54,13 @@ function CreateFlashcardSet() {
     setError('');
 
     try {
-      // Create FormData and append images
       const formData = new FormData();
-      selectedImages.forEach(image => {
-        formData.append('files', image);
+      selectedFiles.forEach(file => {
+        formData.append('files', file);
       });
 
-      // Upload images and get generated flashcards
-      const response = await api.uploadImages(formData, token);
+      const response = await api.uploadFiles(formData, token);
       
-      // Create flashcard set with the generated flashcards
       await api.createFlashcardSet({
         title,
         description,
@@ -126,33 +130,39 @@ function CreateFlashcardSet() {
 
             <div className="space-y-6">
               <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold text-gray-900">Images</h2>
+                <h2 className="text-xl font-semibold text-gray-900">Files</h2>
                 <label className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-black hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black cursor-pointer">
                   <svg className="w-5 h-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
                   </svg>
-                  Add Images
+                  Add Files
                   <input
                     type="file"
                     multiple
-                    accept="image/*"
-                    onChange={handleImageSelect}
+                    accept="image/*,application/pdf,text/plain"
+                    onChange={handleFileSelect}
                     className="hidden"
                   />
                 </label>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {previewUrls.map((url, index) => (
+                {filePreviews.map((preview, index) => (
                   <div key={index} className="relative group">
-                    <img
-                      src={url}
-                      alt={`Preview ${index + 1}`}
-                      className="w-full h-48 object-cover rounded-lg"
-                    />
+                    {preview.type === 'image' ? (
+                      <img
+                        src={preview.url}
+                        alt={`Preview ${index + 1}`}
+                        className="w-full h-48 object-cover rounded-lg"
+                      />
+                    ) : (
+                      <div className="w-full h-48 flex items-center justify-center bg-gray-100 rounded-lg">
+                        <span className="text-gray-500">{preview.name}</span>
+                      </div>
+                    )}
                     <button
                       type="button"
-                      onClick={() => handleRemoveImage(index)}
+                      onClick={() => handleRemoveFile(index)}
                       className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                     >
                       <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">

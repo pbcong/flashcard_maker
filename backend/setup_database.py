@@ -37,22 +37,36 @@ def create_progress_tables():
     
     # SQL for indexes
     indexes_sql = """
+    CREATE INDEX IF NOT EXISTS idx_flashcard_sets_user_id ON flashcard_sets(user_id);
+    CREATE INDEX IF NOT EXISTS idx_flashcards_set_id ON flashcards(set_id);
     CREATE INDEX IF NOT EXISTS idx_study_sessions_user_id ON study_sessions(user_id);
     CREATE INDEX IF NOT EXISTS idx_study_sessions_set_id ON study_sessions(set_id);
     CREATE INDEX IF NOT EXISTS idx_card_reviews_user_id ON card_reviews(user_id);
     CREATE INDEX IF NOT EXISTS idx_card_reviews_card_id ON card_reviews(card_id);
     CREATE INDEX IF NOT EXISTS idx_card_reviews_session_id ON card_reviews(session_id);
     """
-    
+
     # SQL for RLS policies
     rls_sql = """
+    ALTER TABLE flashcard_sets ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE flashcards ENABLE ROW LEVEL SECURITY;
     ALTER TABLE study_sessions ENABLE ROW LEVEL SECURITY;
     ALTER TABLE card_reviews ENABLE ROW LEVEL SECURITY;
-    
-    CREATE POLICY IF NOT EXISTS "Users can only see their own study sessions" ON study_sessions
+
+    DROP POLICY IF EXISTS "Users can only see their own flashcard sets" ON flashcard_sets;
+    CREATE POLICY "Users can only see their own flashcard sets" ON flashcard_sets
         FOR ALL USING (auth.uid() = user_id);
-        
-    CREATE POLICY IF NOT EXISTS "Users can only see their own card reviews" ON card_reviews
+
+    DROP POLICY IF EXISTS "Users can only see their own flashcards" ON flashcards;
+    CREATE POLICY "Users can only see their own flashcards" ON flashcards
+        FOR ALL USING (set_id IN (SELECT id FROM flashcard_sets WHERE user_id = auth.uid()));
+
+    DROP POLICY IF EXISTS "Users can only see their own study sessions" ON study_sessions;
+    CREATE POLICY "Users can only see their own study sessions" ON study_sessions
+        FOR ALL USING (auth.uid() = user_id);
+
+    DROP POLICY IF EXISTS "Users can only see their own card reviews" ON card_reviews;
+    CREATE POLICY "Users can only see their own card reviews" ON card_reviews
         FOR ALL USING (auth.uid() = user_id);
     """
     
