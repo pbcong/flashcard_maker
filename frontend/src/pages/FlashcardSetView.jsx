@@ -48,31 +48,7 @@ function FlashcardSetView() {
   }, [currentCardIndex, set?.flashcards])
 
 
-  const handleAnswer = async (wasCorrect) => {
-
-    const responseTime = 1000
-    const currentCard = set.flashcards[currentCardIndex]
-
-    try {
-      // Record the card review
-      await api.recordCardReview({
-        user_id: '', // Will be set by backend
-        card_id: currentCard.id,
-        was_correct: wasCorrect,
-        response_time_ms: responseTime
-      }, token)
-
-      
-
-      // Move to next card
-      if (currentCardIndex < set.flashcards.length - 1) {
-        setCurrentCardIndex(currentCardIndex + 1)
-        setIsFlipped(false)
-      }
-    } catch (err) {
-      console.error('Failed to record answer:', err)
-    }
-  }
+  
 
   const handleShuffle = () => {
     if (!set) return
@@ -187,6 +163,20 @@ function FlashcardSetView() {
         </div>
 
         <div className="flex justify-end space-x-4 mb-6">
+          <Link
+            to={`/sets/${setId}/study`}
+            className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-book mr-2" viewBox="0 0 16 16" style={{ fill: 'white' }}><path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811V2.828zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.746c-.917-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492V2.687zM8 1.783C7.015.936 5.587.81 4.5.81c-1.087 0-2.135.194-2.943.422v9.746c.935-.53 2.12-.603 3.213-.493 1.18.12 2.37.461 3.287.811V1.783z"/></svg>
+            Study
+          </Link>
+          <Link
+            to={`/sets/${setId}/edit`}
+            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-pencil-square mr-2" viewBox="0 0 16 16"><path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/><path fillRule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11A1.5 1.5 0 0 0 15 13.5V8.5a.5.5 0 0 0-1 0v5a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/></svg>
+            Edit Set
+          </Link>
           <button
             onClick={handleShuffle}
             className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
@@ -245,28 +235,7 @@ function FlashcardSetView() {
             Previous
           </button>
 
-          <div className="flex space-x-4">
-            <button
-              onClick={() => handleAnswer(true)}
-              disabled={!isFlipped}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <svg className="w-5 h-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
-              I know this
-            </button>
-            <button
-              onClick={() => handleAnswer(false)}
-              disabled={!isFlipped}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <svg className="w-5 h-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
-              Still learning
-            </button>
-          </div>
+          
 
           <button
             onClick={nextCard}
