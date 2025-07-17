@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from ...models.models import User
-from ...services.pinyin_service import process_image_for_pinyin, check_tesseract_installation
+from ...services.pinyin_service import process_image_for_pinyin, check_tesseract_installation, process_text_for_pinyin
 from .auth import get_current_user
 
 router = APIRouter(prefix="/pinyin", tags=["Pinyin"])
@@ -27,6 +27,8 @@ class SystemStatusResponse(BaseModel):
     system_ready: bool
     message: str
 
+class PinyinRequest(BaseModel):
+    text: str
 
 @router.get("/status", response_model=SystemStatusResponse)
 async def get_system_status():
@@ -73,4 +75,20 @@ async def annotate_image_with_pinyin(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error processing image: {str(e)}") 
+        raise HTTPException(status_code=500, detail=f"Error processing image: {str(e)}")
+
+@router.post("/annotate-text", response_model=PinyinAnnotationResponse)
+async def annotate_text_with_pinyin(
+    request: PinyinRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Process a string of text to generate pinyin annotations.
+    """
+    try:
+        result = process_text_for_pinyin(request.text)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing text: {str(e)}")
