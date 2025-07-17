@@ -58,59 +58,124 @@ async def process_image_for_pinyin(image_bytes: bytes) -> Dict:
     Returns:
         Dictionary containing the extracted text and pinyin annotations
     """
-    # Check if Tesseract is installed
-    tesseract_available, tesseract_status = check_tesseract_installation()
-    if not tesseract_available:
-        raise ValueError(
-            "Tesseract OCR is not installed or not accessible. "
-            "Please install Tesseract OCR with Chinese language support. "
-            "See TESSERACT_INSTALLATION_GUIDE.md for detailed instructions. "
-            f"Error: {tesseract_status}"
-        )
-    
-    # Convert bytes to PIL Image
     try:
-        image = Image.open(io.BytesIO(image_bytes))
-    except Exception as e:
-        raise ValueError(f"Invalid image format: {str(e)}")
-    
-    # Perform OCR to extract text
-    try:
-        # Try Chinese first, fall back to English if Chinese is not available
-        try:
-            extracted_text = pytesseract.image_to_string(image, lang='chi_sim')
-        except pytesseract.TesseractError:
-            # Fallback to English if Chinese is not available
-            extracted_text = pytesseract.image_to_string(image, lang='eng')
-            
-    except pytesseract.TesseractError as e:
-        if "chi_sim" in str(e):
+        # Check if Tesseract is installed
+        tesseract_available, tesseract_status = check_tesseract_installation()
+        if not tesseract_available:
             raise ValueError(
-                "Chinese language data not found. Please install Tesseract with Chinese (Simplified) language support. "
-                "Download chi_sim.traineddata from https://github.com/tesseract-ocr/tessdata/raw/main/chi_sim.traineddata "
-                "and place it in D:\\Tesseract-OCR\\tessdata\\ directory."
+                "Tesseract OCR is not installed or not accessible. "
+                "Please install Tesseract OCR with Chinese language support. "
+                "See TESSERACT_INSTALLATION_GUIDE.md for detailed instructions. "
+                f"Error: {tesseract_status}"
             )
-        else:
-            raise ValueError(f"OCR failed: {str(e)}")
+        
+        # Convert bytes to PIL Image
+        try:
+            image = Image.open(io.BytesIO(image_bytes))
+        except Exception as e:
+            raise ValueError(f"Invalid image format: {str(e)}")
+        
+        # Perform OCR to extract text
+        try:
+            # Try Chinese first, fall back to English if Chinese is not available
+            try:
+                extracted_text = pytesseract.image_to_string(image, lang='chi_sim')
+            except pytesseract.TesseractError:
+                # Fallback to English if Chinese is not available
+                extracted_text = pytesseract.image_to_string(image, lang='eng')
+                
+        except pytesseract.TesseractError as e:
+            if "chi_sim" in str(e):
+                raise ValueError(
+                    "Chinese language data not found. Please install Tesseract with Chinese (Simplified) language support. "
+                    "Download chi_sim.traineddata from https://github.com/tesseract-ocr/tessdata/raw/main/chi_sim.traineddata "
+                    "and place it in D:\Tesseract-OCR\tessdata\ directory."
+                )
+            else:
+                raise ValueError(f"OCR failed: {str(e)}")
+        except Exception as e:
+            raise ValueError(f"OCR processing error: {str(e)}")
+        
+        # Clean up the extracted text
+        extracted_text = extracted_text.strip()
+        
+        if not extracted_text:
+            raise ValueError("No text detected in the image")
+        
+        # Check if the text contains Chinese characters
+        has_chinese = any(is_chinese_char(char) for char in extracted_text)
+        if not has_chinese:
+            raise ValueError("No Chinese text detected in the image")
+        
+        # Generate character-level annotations
+        annotations = []
+        char_index = 0
+        
+        for char in extracted_text:
+            if is_chinese_char(char):
+                # Get pinyin for the character
+                char_pinyin = pinyin(char, style=Style.TONE, errors='default')
+                pinyin_str = char_pinyin[0][0] if char_pinyin else char
+                
+                annotations.append({
+                    "char": char,
+                    "pinyin": pinyin_str,
+                    "index": char_index
+                })
+            char_index += 1
+        
+        # Generate word-level annotations using jieba for better word segmentation
+        words = []
+        # Segment the text into words
+        word_list = list(jieba.cut(extracted_text))
+        
+        for word in word_list:
+            if any(is_chinese_char(char) for char in word):
+                # Get pinyin for the word
+                word_pinyin = pinyin(word, style=Style.TONE, errors='default')
+                pinyin_str = ' '.join([p[0] for p in word_pinyin])
+                
+                words.append({
+                    "word": word,
+                    "pinyin": pinyin_str
+                })
+        
+        return {
+            "text": extracted_text,
+            "annotations": annotations,
+            "words": words
+        }
     except Exception as e:
-        raise ValueError(f"OCR processing error: {str(e)}")
+        # Catch any unexpected errors and re-raise as ValueError for consistent handling
+        raise ValueError(f"An unexpected error occurred during image processing: {str(e)}")
+
+
+def process_text_for_pinyin(text: str) -> Dict:
+    """
+    Process a string of text to generate pinyin annotations.
     
+    Args:
+        text: The input text string.
+        
+    Returns:
+        Dictionary containing the original text and pinyin annotations.
+    """
     # Clean up the extracted text
-    extracted_text = extracted_text.strip()
+    cleaned_text = text.strip()
     
-    if not extracted_text:
-        raise ValueError("No text detected in the image")
+    if not cleaned_text:
+        raise ValueError("Input text is empty")
     
     # Check if the text contains Chinese characters
-    has_chinese = any(is_chinese_char(char) for char in extracted_text)
+    has_chinese = any(is_chinese_char(char) for char in cleaned_text)
     if not has_chinese:
-        raise ValueError("No Chinese text detected in the image")
+        raise ValueError("No Chinese text detected in the input")
     
     # Generate character-level annotations
     annotations = []
     char_index = 0
     
-    for char in extracted_text:
+    for char in cleaned_text:
         if is_chinese_char(char):
             # Get pinyin for the character
             char_pinyin = pinyin(char, style=Style.TONE, errors='default')
@@ -126,9 +191,10 @@ async def process_image_for_pinyin(image_bytes: bytes) -> Dict:
     # Generate word-level annotations using jieba for better word segmentation
     words = []
     # Segment the text into words
-    word_list = list(jieba.cut(extracted_text))
+    word_list = list(jieba.cut(cleaned_text))
     
     for word in word_list:
+        # Only include words that contain at least one Chinese character
         if any(is_chinese_char(char) for char in word):
             # Get pinyin for the word
             word_pinyin = pinyin(word, style=Style.TONE, errors='default')
@@ -138,9 +204,9 @@ async def process_image_for_pinyin(image_bytes: bytes) -> Dict:
                 "word": word,
                 "pinyin": pinyin_str
             })
-    
+            
     return {
-        "text": extracted_text,
+        "text": cleaned_text,
         "annotations": annotations,
         "words": words
-    } 
+    }
