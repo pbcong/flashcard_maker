@@ -10,6 +10,7 @@ const FlashcardSetView = lazy(() => import('../pages/FlashcardSetView'))
 const CreateFlashcardSet = lazy(() => import('../pages/CreateFlashcardSet'))
 const EditFlashcardSet = lazy(() => import('../pages/EditFlashcardSet'))
 const Study = lazy(() => import('../pages/Study'))
+const PinyinReader = lazy(() => import('../pages/PinyinReader'))
 
 const CenteredSpinner = () => (
   <div className="flex h-screen items-center justify-center">
@@ -69,6 +70,16 @@ export default function AppRouter() {
             <ProtectedRoute>
               <AuthenticatedLayout>
                 <Study />
+              </AuthenticatedLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/pinyin-reader"
+          element={
+            <ProtectedRoute>
+              <AuthenticatedLayout>
+                <PinyinReader />
               </AuthenticatedLayout>
             </ProtectedRoute>
           }
