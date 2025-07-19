@@ -47,38 +47,33 @@ const PinyinReader = () => {
     if (!annotatedText) return null;
 
     const { text, words } = annotatedText;
+
+    // Sort words by start just in case
+    const sortedWords = [...words].sort((a, b) => a.start - b.start);
+
     let currentPos = 0;
     const rendered = [];
 
-    // Create a map of words to their pinyin
-    const wordMap = words.reduce((acc, word) => {
-        acc[word.word] = word.pinyin;
-        return acc;
-    }, {});
+    for (const { pinyin, start, end } of sortedWords) {
+      // Add text before this word if any
+      if (start > currentPos) {
+        rendered.push(text.slice(currentPos, start));
+      }
 
-    // Create a regex to find all the words in the text
-    const regex = new RegExp(Object.keys(wordMap).join('|'), 'g');
+      // Add the annotated word
+      rendered.push(
+        <ruby key={start}>
+          {text.slice(start, end + 1)}
+          <rt>{pinyin}</rt>
+        </ruby>
+      );
 
-    text.replace(regex, (match, offset) => {
-        // Add the text before the match
-        if (offset > currentPos) {
-            rendered.push(text.substring(currentPos, offset));
-        }
-
-        // Add the annotated word
-        rendered.push(
-            <ruby key={offset}>
-                {match}
-                <rt>{wordMap[match]}</rt>
-            </ruby>
-        );
-
-        currentPos = offset + match.length;
-    });
+      currentPos = end + 1;
+    }
 
     // Add any remaining text
     if (currentPos < text.length) {
-        rendered.push(text.substring(currentPos));
+      rendered.push(text.slice(currentPos));
     }
 
     return <Typography variant="body1" component="div">{rendered}</Typography>;

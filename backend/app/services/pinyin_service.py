@@ -129,7 +129,9 @@ async def process_image_for_pinyin(image_bytes: bytes) -> Dict:
         # Segment the text into words
         word_list = list(jieba.cut(extracted_text))
         
+        pos = 0
         for word in word_list:
+            word_len = len(word)
             if any(is_chinese_char(char) for char in word):
                 # Get pinyin for the word
                 word_pinyin = pinyin(word, style=Style.TONE, errors='default')
@@ -137,8 +139,11 @@ async def process_image_for_pinyin(image_bytes: bytes) -> Dict:
                 
                 words.append({
                     "word": word,
-                    "pinyin": pinyin_str
+                    "pinyin": pinyin_str,
+                    "start": pos,
+                    "end": pos + word_len - 1
                 })
+            pos += word_len
         
         return {
             "text": extracted_text,
@@ -193,7 +198,9 @@ def process_text_for_pinyin(text: str) -> Dict:
     # Segment the text into words
     word_list = list(jieba.cut(cleaned_text))
     
+    pos = 0
     for word in word_list:
+        word_len = len(word)
         # Only include words that contain at least one Chinese character
         if any(is_chinese_char(char) for char in word):
             # Get pinyin for the word
@@ -202,9 +209,12 @@ def process_text_for_pinyin(text: str) -> Dict:
             
             words.append({
                 "word": word,
-                "pinyin": pinyin_str
+                "pinyin": pinyin_str,
+                "start": pos,
+                "end": pos + word_len - 1
             })
-            
+        pos += word_len
+        
     return {
         "text": cleaned_text,
         "annotations": annotations,

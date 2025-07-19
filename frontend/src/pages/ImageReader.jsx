@@ -65,34 +65,38 @@ const ImageReader = () => {
     if (!annotatedData) return null;
 
     const { text, words } = annotatedData;
-    const wordMap = words.reduce((acc, word) => {
-      acc[word.word] = word.pinyin;
-      return acc;
-    }, {});
 
-    // Create a regex that includes all words and also non-Chinese characters/spaces
-    const escapeRegExp = (string) => {
-      return string.replace(/[.*+?^${}()|[\\]/g, '\\$&');
-    };
-    const wordKeys = Object.keys(wordMap).map(escapeRegExp);
-    const regex = new RegExp(`(${wordKeys.join('|')}|[^\\u4e00-\\u9fa5]+)`, 'g');
-    
-    const parts = text.split(regex).filter(part => part);
+    // Sort words by start just in case
+    const sortedWords = [...words].sort((a, b) => a.start - b.start);
+
+    let currentPos = 0;
+    const rendered = [];
+
+    for (const { pinyin, start, end } of sortedWords) {
+      // Add text before this word if any
+      if (start > currentPos) {
+        rendered.push(<span key={currentPos}>{text.slice(currentPos, start)}</span>);
+      }
+
+      // Add the annotated word
+      rendered.push(
+        <ruby key={start} style={{ cursor: 'pointer', margin: '0 2px' }}>
+          {text.slice(start, end + 1)}
+          <rt style={{ fontSize: '0.8em' }}>{pinyin}</rt>
+        </ruby>
+      );
+
+      currentPos = end + 1;
+    }
+
+    // Add any remaining text
+    if (currentPos < text.length) {
+      rendered.push(<span key={currentPos}>{text.slice(currentPos)}</span>);
+    }
 
     return (
       <Typography variant="h5" component="div" sx={{ lineHeight: 2.5, p: 1 }}>
-        {parts.map((part, index) => {
-          const pinyin = wordMap[part];
-          if (pinyin) {
-            return (
-              <ruby key={index} style={{ cursor: 'pointer', margin: '0 2px' }}>
-                {part}
-                <rt style={{ fontSize: '0.8em' }}>{pinyin}</rt>
-              </ruby>
-            );
-          }
-          return <span key={index}>{part}</span>;
-        })}
+        {rendered}
       </Typography>
     );
   };
