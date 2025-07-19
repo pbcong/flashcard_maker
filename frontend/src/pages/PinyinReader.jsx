@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, TextField, Typography, Paper, CircularProgress } from '@mui/material';
+import { Button, TextField, Typography, Paper, CircularProgress, Switch, FormControlLabel, Modal, Fade, Box } from '@mui/material';
 import { useAuth } from '../hooks/useAuth';
 
 
@@ -9,6 +9,10 @@ const PinyinReader = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const { token } = useAuth();
+
+  const [showAllPinyin, setShowAllPinyin] = useState(false);
+  const [selectedWord, setSelectedWord] = useState(null);
+  const [wordDetails, setWordDetails] = useState(null);
 
   const handleTextChange = (event) => {
     setText(event.target.value);
@@ -43,6 +47,34 @@ const PinyinReader = () => {
     }
   };
 
+  const handleTogglePinyin = () => {
+    setShowAllPinyin(!showAllPinyin);
+  };
+
+  const handleWordClick = async (word) => {
+    setSelectedWord(word);
+    try {
+      const response = await fetch(`/api/v1/pinyin/word-info?word=${encodeURIComponent(word)}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setWordDetails(data);
+      } else {
+        setWordDetails({ translation: 'Not found', examples: [] });
+      }
+    } catch (err) {
+      setWordDetails({ translation: 'Error fetching details', examples: [] });
+    }
+  };
+
+  const handleCloseModal = () => {
+    setSelectedWord(null);
+    setWordDetails(null);
+  };
+
   const renderAnnotatedText = () => {
     if (!annotatedText) return null;
 
@@ -54,7 +86,7 @@ const PinyinReader = () => {
     let currentPos = 0;
     const rendered = [];
 
-    for (const { pinyin, start, end } of sortedWords) {
+    for (const { word, pinyin, start, end } of sortedWords) {
       // Add text before this word if any
       if (start > currentPos) {
         rendered.push(text.slice(currentPos, start));
@@ -62,9 +94,14 @@ const PinyinReader = () => {
 
       // Add the annotated word
       rendered.push(
-        <ruby key={start}>
+        <ruby
+          key={start}
+          onClick={() => handleWordClick(word)}
+          onMouseEnter={(e) => !showAllPinyin && (e.currentTarget.querySelector('rt').style.visibility = 'visible')}
+          onMouseLeave={(e) => !showAllPinyin && (e.currentTarget.querySelector('rt').style.visibility = 'hidden')}
+        >
           {text.slice(start, end + 1)}
-          <rt>{pinyin}</rt>
+          <rt style={{ visibility: showAllPinyin ? 'visible' : 'hidden' }}>{pinyin}</rt>
         </ruby>
       );
 
@@ -111,9 +148,33 @@ const PinyinReader = () => {
           <Typography variant="h6" gutterBottom>
             Annotated Text
           </Typography>
+          <FormControlLabel
+            control={<Switch checked={showAllPinyin} onChange={handleTogglePinyin} />}
+            label="Show All Pinyin"
+          />
           {renderAnnotatedText()}
         </Paper>
       )}
+      <Modal
+        open={!!selectedWord}
+        onClose={handleCloseModal}
+        closeAfterTransition
+      >
+        <Fade in={!!selectedWord}>
+          <Box sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 400, bgcolor: 'background.paper', boxShadow: 24, p: 4 }}>
+            <Typography variant="h6">{selectedWord}</Typography>
+            {wordDetails ? (
+              <>
+                <Typography>Translation: {wordDetails.translation}</Typography>
+                <Typography>Examples:</Typography>
+                {wordDetails.examples.map((ex, i) => <Typography key={i}>{ex}</Typography>)}
+              </>
+            ) : (
+              <CircularProgress />
+            )}
+          </Box>
+        </Fade>
+      </Modal>
     </Paper>
   );
 };

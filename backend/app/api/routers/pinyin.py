@@ -15,10 +15,16 @@ class CharacterAnnotation(BaseModel):
     index: int
 
 
+class Word(BaseModel):
+    word: str
+    pinyin: str
+    start: int
+    end: int
+
 class PinyinAnnotationResponse(BaseModel):
     text: str
     annotations: List[CharacterAnnotation]
-    words: List[Dict[str, str]]  # For multi-character words
+    words: List[Word]
 
 
 class SystemStatusResponse(BaseModel):
@@ -92,3 +98,18 @@ async def annotate_text_with_pinyin(
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing text: {str(e)}")
+
+class WordDetails(BaseModel):
+    translation: str
+    examples: List[str]
+
+@router.get("/word-info", response_model=WordDetails)
+def get_word_info(word: str, current_user: User = Depends(get_current_user)):
+    # Mock data for demonstration
+    mock_data = {
+        "hello": {"translation": "greeting", "examples": ["Hello world!"]},
+        "你好": {"translation": "hello", "examples": ["你好，世界！"]},
+        # Add more mock words as needed
+    }
+    data = mock_data.get(word, {"translation": "Unknown word", "examples": []})
+    return WordDetails(**data)
