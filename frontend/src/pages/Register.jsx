@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth'
 
 function Register() {
   const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
@@ -22,7 +23,7 @@ function Register() {
     setLoading(true)
 
     try {
-      await register(email, password)
+      await register(email, password, username)
       navigate('/')
     } catch (err) {
       setError('Failed to create an account')
@@ -52,6 +53,21 @@ function Register() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="username" className="input-label">
+                Username
+              </label>
+              <input
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="input"
+                placeholder="johndoe"
+                required
+              />
+            </div>
+
             <div>
               <label htmlFor="email" className="input-label">
                 Email
