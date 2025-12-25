@@ -69,3 +69,5 @@ tensorboard_logs/
 # OS-specific
 .DS_Store
 Thumbs.db
+
+node_modules
