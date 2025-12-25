@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { Button, Typography, Paper, CircularProgress, Box, Alert } from '@mui/material';
+import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 
 const ImageReader = () => {
@@ -8,19 +7,16 @@ const ImageReader = () => {
   const [annotatedData, setAnnotatedData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
   const { token } = useAuth();
 
-  const handleFileChange = (event) => {
-    const file = event.target.files[0];
-    if (file && file.type.startsWith('image/')) {
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file?.type.startsWith('image/')) {
       setSelectedFile(file);
       setPreview(URL.createObjectURL(file));
-      setAnnotatedData(null); // Reset previous results
+      setAnnotatedData(null);
       setError(null);
     } else {
-      setSelectedFile(null);
-      setPreview(null);
       setError('Please select a valid image file.');
     }
   };
@@ -36,13 +32,9 @@ const ImageReader = () => {
     formData.append('file', selectedFile);
 
     try {
-      // NOTE: We assume the vite proxy is set up for /api to point to the backend
       const response = await fetch('/api/v1/pinyin/annotate', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        // No 'Content-Type' header, browser sets it for FormData
+        headers: { 'Authorization': `Bearer ${token}` },
         body: formData,
       });
 
@@ -51,104 +43,88 @@ const ImageReader = () => {
         throw new Error(errorData.detail || 'Failed to annotate image.');
       }
 
-      const data = await response.json();
-      setAnnotatedData(data);
+      setAnnotatedData(await response.json());
     } catch (err) {
       setError(err.message);
-    }
-    finally {
+    } finally {
       setLoading(false);
     }
   };
 
-  const renderAnnotatedText = () => {
+  const renderAnnotated = () => {
     if (!annotatedData) return null;
-
     const { text, words } = annotatedData;
-    const wordMap = words.reduce((acc, word) => {
-      acc[word.word] = word.pinyin;
-      return acc;
-    }, {});
-
-    // Create a regex that includes all words and also non-Chinese characters/spaces
-    const escapeRegExp = (string) => {
-      return string.replace(/[.*+?^${}()|[\\]/g, '\\$&');
-    };
-    const wordKeys = Object.keys(wordMap).map(escapeRegExp);
-    const regex = new RegExp(`(${wordKeys.join('|')}|[^\\u4e00-\\u9fa5]+)`, 'g');
+    const wordMap = words.reduce((acc, w) => ({ ...acc, [w.word]: w.pinyin }), {});
     
-    const parts = text.split(regex).filter(part => part);
+    const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${Object.keys(wordMap).map(escape).join('|')}|[^\\u4e00-\\u9fa5]+)`, 'g');
+    const parts = text.split(regex).filter(Boolean);
 
     return (
-      <Typography variant="h5" component="div" sx={{ lineHeight: 2.5, p: 1 }}>
-        {parts.map((part, index) => {
+      <p className="text-lg leading-relaxed">
+        {parts.map((part, i) => {
           const pinyin = wordMap[part];
-          if (pinyin) {
-            return (
-              <ruby key={index} style={{ cursor: 'pointer', margin: '0 2px' }}>
-                {part}
-                <rt style={{ fontSize: '0.8em' }}>{pinyin}</rt>
-              </ruby>
-            );
-          }
-          return <span key={index}>{part}</span>;
+          return pinyin ? (
+            <ruby key={i} className="mx-0.5">
+              {part}<rt className="text-xs text-neutral-500">{pinyin}</rt>
+            </ruby>
+          ) : (
+            <span key={i}>{part}</span>
+          );
         })}
-      </Typography>
+      </p>
     );
   };
 
   return (
-    <Paper sx={{ p: 3, maxWidth: '1200px', margin: 'auto' }}>
-      <Typography variant="h4" gutterBottom>
-        Interactive Image Reader
-      </Typography>
-      <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-        Upload an image with Chinese text to get interactive Pinyin annotations.
-      </Typography>
-      
-      <Box sx={{ border: '2px dashed grey', p: 3, mb: 3, textAlign: 'center' }}>
-        <Button variant="contained" component="label">
-          Upload Image
-          <input type="file" hidden accept="image/*" onChange={handleFileChange} />
-        </Button>
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="card p-6">
+        <h1 className="text-2xl font-semibold text-neutral-900 mb-2">Image Reader</h1>
+        <p className="text-sm text-neutral-500 mb-6">
+          Upload an image with Chinese text to get Pinyin annotations.
+        </p>
+
+        {/* Upload */}
+        <div className="border-2 border-dashed border-neutral-200 rounded-lg p-6 text-center mb-6">
+          <label className="btn-primary cursor-pointer inline-flex">
+            Upload Image
+            <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+          </label>
+          {selectedFile && (
+            <p className="text-sm text-neutral-500 mt-2">{selectedFile.name}</p>
+          )}
+        </div>
+
         {preview && (
-          <Typography variant="body2" sx={{ mt: 1 }}>
-            Selected: {selectedFile.name}
-          </Typography>
+          <button
+            onClick={handleAnnotate}
+            disabled={loading}
+            className="btn-primary mb-6"
+          >
+            {loading ? <span className="spinner" /> : 'Annotate Image'}
+          </button>
         )}
-      </Box>
 
-      {preview && (
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleAnnotate}
-          disabled={loading}
-          sx={{ mb: 3, minWidth: '150px' }}
-        >
-          {loading ? <CircularProgress size={24} color="inherit" /> : 'Annotate Image'}
-        </Button>
-      )}
+        {error && <div className="alert-error mb-6">{error}</div>}
 
-      {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
-
-      <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', md: 'row' } }}>
-        {preview && (
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography variant="h6" gutterBottom>Original Image</Typography>
-            <img src={preview} alt="Preview" style={{ width: '100%', borderRadius: '8px' }} />
-          </Box>
-        )}
-        {annotatedData && (
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography variant="h6" gutterBottom>Interactive Text</Typography>
-            <Paper variant="outlined" sx={{ p: 2, backgroundColor: '#f9f9f9' }}>
-              {renderAnnotatedText()}
-            </Paper>
-          </Box>
-        )}
-      </Box>
-    </Paper>
+        <div className="grid md:grid-cols-2 gap-6">
+          {preview && (
+            <div>
+              <h2 className="text-sm font-medium text-neutral-700 mb-2">Original</h2>
+              <img src={preview} alt="Preview" className="w-full rounded-lg" />
+            </div>
+          )}
+          {annotatedData && (
+            <div>
+              <h2 className="text-sm font-medium text-neutral-700 mb-2">Annotated</h2>
+              <div className="bg-neutral-50 rounded-lg p-4">
+                {renderAnnotated()}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 };
 

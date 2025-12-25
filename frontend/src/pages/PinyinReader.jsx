@@ -1,7 +1,5 @@
-import React, { useState } from 'react';
-import { Button, TextField, Typography, Paper, CircularProgress } from '@mui/material';
+import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
-
 
 const PinyinReader = () => {
   const [text, setText] = useState('');
@@ -10,11 +8,9 @@ const PinyinReader = () => {
   const [error, setError] = useState(null);
   const { token } = useAuth();
 
-  const handleTextChange = (event) => {
-    setText(event.target.value);
-  };
-
   const handleAnnotate = async () => {
+    if (!text.trim()) return;
+    
     setLoading(true);
     setError(null);
     setAnnotatedText(null);
@@ -34,8 +30,7 @@ const PinyinReader = () => {
         throw new Error(errorData.detail || 'Failed to annotate text');
       }
 
-      const data = await response.json();
-      setAnnotatedText(data);
+      setAnnotatedText(await response.json());
     } catch (err) {
       setError(err.message);
     } finally {
@@ -43,83 +38,78 @@ const PinyinReader = () => {
     }
   };
 
-  const renderAnnotatedText = () => {
+  const renderAnnotated = () => {
     if (!annotatedText) return null;
-
-    const { text, words } = annotatedText;
-    let currentPos = 0;
-    const rendered = [];
-
-    // Create a map of words to their pinyin
-    const wordMap = words.reduce((acc, word) => {
-        acc[word.word] = word.pinyin;
-        return acc;
-    }, {});
-
-    // Create a regex to find all the words in the text
+    const { text: t, words } = annotatedText;
+    const wordMap = words.reduce((acc, w) => ({ ...acc, [w.word]: w.pinyin }), {});
     const regex = new RegExp(Object.keys(wordMap).join('|'), 'g');
 
-    text.replace(regex, (match, offset) => {
-        // Add the text before the match
-        if (offset > currentPos) {
-            rendered.push(text.substring(currentPos, offset));
-        }
+    let currentPos = 0;
+    const parts = [];
 
-        // Add the annotated word
-        rendered.push(
-            <ruby key={offset}>
-                {match}
-                <rt>{wordMap[match]}</rt>
-            </ruby>
-        );
-
-        currentPos = offset + match.length;
+    t.replace(regex, (match, offset) => {
+      if (offset > currentPos) {
+        parts.push({ text: t.substring(currentPos, offset) });
+      }
+      parts.push({ text: match, pinyin: wordMap[match] });
+      currentPos = offset + match.length;
     });
 
-    // Add any remaining text
-    if (currentPos < text.length) {
-        rendered.push(text.substring(currentPos));
+    if (currentPos < t.length) {
+      parts.push({ text: t.substring(currentPos) });
     }
 
-    return <Typography variant="body1" component="div">{rendered}</Typography>;
+    return (
+      <p className="text-lg leading-relaxed">
+        {parts.map((p, i) =>
+          p.pinyin ? (
+            <ruby key={i} className="mx-0.5">
+              {p.text}<rt className="text-xs text-neutral-500">{p.pinyin}</rt>
+            </ruby>
+          ) : (
+            <span key={i}>{p.text}</span>
+          )
+        )}
+      </p>
+    );
   };
 
   return (
-    <Paper sx={{ p: 2 }}>
-      <Typography variant="h4" gutterBottom>
-        Pinyin Reader
-      </Typography>
-      <TextField
-        label="Enter Chinese Text"
-        multiline
-        rows={4}
-        fullWidth
-        value={text}
-        onChange={handleTextChange}
-        variant="outlined"
-        sx={{ mb: 2 }}
-      />
-      <Button
-        variant="contained"
-        onClick={handleAnnotate}
-        disabled={loading || !text}
-      >
-        {loading ? <CircularProgress size={24} /> : 'Annotate'}
-      </Button>
-      {error && (
-        <Typography color="error" sx={{ mt: 2 }}>
-          {error}
-        </Typography>
-      )}
-      {annotatedText && (
-        <Paper sx={{ p: 2, mt: 2 }}>
-          <Typography variant="h6" gutterBottom>
-            Annotated Text
-          </Typography>
-          {renderAnnotatedText()}
-        </Paper>
-      )}
-    </Paper>
+    <div className="max-w-2xl mx-auto px-4 py-8">
+      <div className="card p-6">
+        <h1 className="text-2xl font-semibold text-neutral-900 mb-2">Pinyin Reader</h1>
+        <p className="text-sm text-neutral-500 mb-6">
+          Enter Chinese text to get Pinyin annotations.
+        </p>
+
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Enter Chinese text..."
+          rows={4}
+          className="input resize-none mb-4"
+        />
+
+        <button
+          onClick={handleAnnotate}
+          disabled={loading || !text.trim()}
+          className="btn-primary mb-6"
+        >
+          {loading ? <span className="spinner" /> : 'Annotate'}
+        </button>
+
+        {error && <div className="alert-error mb-4">{error}</div>}
+
+        {annotatedText && (
+          <div>
+            <h2 className="text-sm font-medium text-neutral-700 mb-2">Annotated Text</h2>
+            <div className="bg-neutral-50 rounded-lg p-4">
+              {renderAnnotated()}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 

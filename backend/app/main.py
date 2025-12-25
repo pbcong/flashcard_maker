@@ -2,7 +2,7 @@ import os
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .api.routers import auth, flashcards, upload, reviews, pinyin
+from .api.routers import auth, flashcards, upload, reviews
 
 app = FastAPI(title="Flashcard Maker API", version="1.0.0")
 
@@ -25,7 +25,7 @@ api_router.include_router(auth.router)
 api_router.include_router(upload.router)
 api_router.include_router(flashcards.router)
 api_router.include_router(reviews.router)
-api_router.include_router(pinyin.router)
+
 
 
 app.include_router(api_router)
@@ -34,3 +34,8 @@ app.include_router(api_router)
 @app.get("/")
 async def read_root():
     return {"message": "Flashcard Maker API is running"}
+
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}

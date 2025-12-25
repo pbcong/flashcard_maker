@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+*.egg
+.pytest_cache/
+
+# Virtual environment
+venv/
+env/
+ENV/
+
+# Environment files
+.env
+.env.*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Tests (not needed in production)
+tests/
+
+# Git
+.git/
+.gitignore
+
+# Docs
+*.md
+!README.md
+
+# Build artifacts
+build/
+dist/
+
+# Node.js artifacts (shouldn't be here but just in case)
+node_modules/
+package*.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Alembic migrations (include if needed, exclude if managed separately)
+# migrations/

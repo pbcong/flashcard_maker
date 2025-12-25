@@ -29,9 +29,3 @@ httpx
 # Type Support
 typing-extensions
 pypdf
-
-# OCR and Pinyin Support
-pytesseract
-Pillow
-pypinyin
-jieba
