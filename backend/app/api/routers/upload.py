@@ -78,3 +78,39 @@ async def upload_files(
         raise HTTPException(status_code=500, detail=f"Flashcard generation failed: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+from pydantic import BaseModel
+
+class TextGenerateRequest(BaseModel):
+    text: str
+    back_language: str = "english"
+
+
+@router.post("/generate-text", response_model=FlashcardResponse)
+async def generate_from_text(
+    request: TextGenerateRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Generate flashcards from pasted text content.
+    
+    Args:
+        request: Text content and language preference
+    """
+    if not request.text or len(request.text.strip()) == 0:
+        raise HTTPException(status_code=400, detail="Text content is required")
+    
+    # Validate back_language
+    back_language = request.back_language
+    if back_language not in ("english", "vietnamese"):
+        back_language = "english"
+    
+    config = GenerationConfig(back_language=back_language)
+    
+    try:
+        return await process_text_to_flashcards(request.text, config)
+    except FlashcardGenerationError as e:
+        raise HTTPException(status_code=500, detail=f"Flashcard generation failed: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

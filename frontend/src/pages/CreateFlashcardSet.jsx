@@ -12,7 +12,8 @@ function CreateFlashcardSet() {
   const [error, setError] = useState('');
   const [filePreviews, setFilePreviews] = useState([]);
   const [manualCards, setManualCards] = useState([]);
-  const [isManualMode, setIsManualMode] = useState(false);
+  const [pasteText, setPasteText] = useState('');
+  const [inputMode, setInputMode] = useState('upload'); // 'upload', 'paste', 'manual'
   const [backLanguage, setBackLanguage] = useState('english');
   const { token } = useAuth();
   const navigate = useNavigate();
@@ -21,7 +22,7 @@ function CreateFlashcardSet() {
   useEffect(() => {
     if (location.state?.prefilledCards) {
       setManualCards(location.state.prefilledCards);
-      setIsManualMode(true);
+      setInputMode('manual');
     }
   }, [location.state]);
 
@@ -49,27 +50,40 @@ function CreateFlashcardSet() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!title.trim()) return setError('Please enter a title');
-    if (!isManualMode && selectedFiles.length === 0) return setError('Please select at least one file');
-    if (isManualMode && manualCards.length === 0) return setError('Please add at least one flashcard');
+    
+    // Validate based on mode
+    if (inputMode === 'upload' && selectedFiles.length === 0) {
+      return setError('Please select at least one file');
+    }
+    if (inputMode === 'paste' && !pasteText.trim()) {
+      return setError('Please enter some text');
+    }
+    if (inputMode === 'manual' && manualCards.length === 0) {
+      return setError('Please add at least one flashcard');
+    }
 
     setLoading(true);
-    setLoadingMessage('Preparing files...');
+    setLoadingMessage('Preparing...');
     setError('');
 
     try {
       let cards = [];
       
-      if (isManualMode) {
+      if (inputMode === 'manual') {
         cards = manualCards;
+      } else if (inputMode === 'paste') {
+        setLoadingMessage('Analyzing text with AI...');
+        const response = await api.generateFromText(pasteText, backLanguage, token);
+        cards = response.flashcards;
       } else {
         setLoadingMessage('Analyzing content with AI...');
         const formData = new FormData();
         selectedFiles.forEach(file => formData.append('files', file));
         const response = await api.uploadFiles(formData, token, { backLanguage });
         cards = response.flashcards;
-        setLoadingMessage('Creating flashcard set...');
       }
       
+      setLoadingMessage('Creating flashcard set...');
       await api.createFlashcardSet({ title, description, cards }, token);
       navigate('/');
     } catch (err) {
@@ -131,25 +145,32 @@ function CreateFlashcardSet() {
           </div>
 
           {/* Mode Toggle */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <button
               type="button"
-              onClick={() => setIsManualMode(false)}
-              className={!isManualMode ? 'btn-primary' : 'btn-secondary'}
+              onClick={() => setInputMode('upload')}
+              className={inputMode === 'upload' ? 'btn-primary' : 'btn-secondary'}
             >
               Upload Files
             </button>
             <button
               type="button"
-              onClick={() => setIsManualMode(true)}
-              className={isManualMode ? 'btn-primary' : 'btn-secondary'}
+              onClick={() => setInputMode('paste')}
+              className={inputMode === 'paste' ? 'btn-primary' : 'btn-secondary'}
+            >
+              Paste Text
+            </button>
+            <button
+              type="button"
+              onClick={() => setInputMode('manual')}
+              className={inputMode === 'manual' ? 'btn-primary' : 'btn-secondary'}
             >
               Manual Entry
             </button>
           </div>
 
-          {/* Manual Cards */}
-          {isManualMode ? (
+          {/* Input Area based on mode */}
+          {inputMode === 'manual' ? (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-neutral-700">Cards ({manualCards.length})</span>
@@ -198,8 +219,24 @@ function CreateFlashcardSet() {
                 </div>
               ))}
             </div>
+          ) : inputMode === 'paste' ? (
+            /* Paste Text Mode */
+            <div>
+              <label htmlFor="pasteText" className="input-label">Paste your text here</label>
+              <textarea
+                id="pasteText"
+                value={pasteText}
+                onChange={(e) => setPasteText(e.target.value)}
+                rows={8}
+                className="input resize-none font-mono text-sm"
+                placeholder="Paste vocabulary, notes, or any text content here. The AI will extract key concepts and create flashcards..."
+              />
+              <p className="text-xs text-neutral-500 mt-1">
+                {pasteText.length} characters
+              </p>
+            </div>
           ) : (
-            /* File Upload */
+            /* File Upload Mode */
             <div className="space-y-4">
               <label className="btn-secondary cursor-pointer inline-flex">
                 <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

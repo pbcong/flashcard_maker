@@ -203,4 +203,22 @@ export const api = {
     return response.json();
   },
 
+  async generateFromText(text, backLanguage, token) {
+    const response = await fetch(`${API_BASE}/upload/generate-text`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text, back_language: backLanguage }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to generate flashcards');
+    }
+
+    return response.json();
+  },
+
 };
