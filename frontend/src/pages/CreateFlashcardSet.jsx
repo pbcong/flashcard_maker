@@ -20,10 +20,6 @@ function CreateFlashcardSet() {
     if (location.state?.prefilledCards) {
       setManualCards(location.state.prefilledCards);
       setIsManualMode(true);
-      if (location.state.fromPinyinReader) {
-        setTitle('Chinese Vocabulary');
-        setDescription('Flashcards generated from Pinyin Reader');
-      }
     }
   }, [location.state]);
 
@@ -115,24 +111,22 @@ function CreateFlashcardSet() {
           </div>
 
           {/* Mode Toggle */}
-          {!location.state?.fromPinyinReader && (
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setIsManualMode(false)}
-                className={!isManualMode ? 'btn-primary' : 'btn-secondary'}
-              >
-                Upload Files
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsManualMode(true)}
-                className={isManualMode ? 'btn-primary' : 'btn-secondary'}
-              >
-                Manual Entry
-              </button>
-            </div>
-          )}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setIsManualMode(false)}
+              className={!isManualMode ? 'btn-primary' : 'btn-secondary'}
+            >
+              Upload Files
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsManualMode(true)}
+              className={isManualMode ? 'btn-primary' : 'btn-secondary'}
+            >
+              Manual Entry
+            </button>
+          </div>
 
           {/* Manual Cards */}
           {isManualMode ? (
