@@ -13,6 +13,11 @@ class User(BaseModel):
     username: str
 
 
+class GenerationConfig(BaseModel):
+    """User-configurable settings for flashcard generation."""
+    back_language: str = "english"  # "english" or "vietnamese"
+
+
 class Flashcard(BaseModel):
     id: Optional[int] = None
     front: str
@@ -29,7 +34,6 @@ class FlashcardSet(BaseModel):
 
 
 class FlashcardResponse(BaseModel):
-    transcription: str
     flashcards: List[Flashcard]
 
 

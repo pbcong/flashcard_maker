@@ -1,12 +1,13 @@
 import io
-from typing import List
+from typing import List, Optional
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from pypdf import PdfReader
 
-from ...models.models import FlashcardResponse, User
+from ...models.models import FlashcardResponse, User, GenerationConfig
 from ...services.services import (process_images_to_flashcards,
-                                  process_text_to_flashcards)
+                                  process_text_to_flashcards,
+                                  FlashcardGenerationError)
 from .auth import get_current_user
 
 router = APIRouter(prefix="/upload", tags=["Upload"])
@@ -15,13 +16,28 @@ router = APIRouter(prefix="/upload", tags=["Upload"])
 @router.post("/", response_model=FlashcardResponse)
 async def upload_files(
     files: List[UploadFile] = File(...),
+    back_language: Optional[str] = Form("english"),
     current_user: User = Depends(get_current_user)
 ):
+    """
+    Upload files (images, PDFs, text) to generate flashcards.
+    
+    Args:
+        files: List of files to process
+        back_language: Language for the back of cards ("english" or "vietnamese")
+    """
     if not files or len(files) == 0:
         raise HTTPException(status_code=400, detail="No files were uploaded")
     
+    # Validate back_language
+    if back_language not in ("english", "vietnamese"):
+        back_language = "english"
+    
+    config = GenerationConfig(back_language=back_language)
+    
     images = []
     text_content = ""
+    
     for file in files:
         try:
             content_type = file.content_type
@@ -53,10 +69,12 @@ async def upload_files(
     
     try:
         if images:
-            return await process_images_to_flashcards(images)
+            return await process_images_to_flashcards(images, config)
         elif text_content:
-            return await process_text_to_flashcards(text_content)
+            return await process_text_to_flashcards(text_content, config)
         else:
             raise HTTPException(status_code=400, detail="No processable content found in files")
+    except FlashcardGenerationError as e:
+        raise HTTPException(status_code=500, detail=f"Flashcard generation failed: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -6,15 +6,14 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
-        extra="ignore",  # Allow extra fields to be ignored instead of causing errors
+        extra="ignore",
     )
 
-    openai_api_key: str
+    openrouter_api_key: str
     supabase_url: str
     supabase_service_key: str
-    openai_model: str = "gpt-4o"
-    database_url: str = ""  # Add database_url field
-    allowed_origins: str = "http://localhost:5173"  # Add allowed_origins field
+    openrouter_model: str = "google/gemini-3-flash-preview"
+    allowed_origins: str = "http://localhost:5173"
 
 
 settings = Settings()

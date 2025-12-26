@@ -8,10 +8,12 @@ function CreateFlashcardSet() {
   const [description, setDescription] = useState('');
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
   const [error, setError] = useState('');
   const [filePreviews, setFilePreviews] = useState([]);
   const [manualCards, setManualCards] = useState([]);
   const [isManualMode, setIsManualMode] = useState(false);
+  const [backLanguage, setBackLanguage] = useState('english');
   const { token } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -51,6 +53,7 @@ function CreateFlashcardSet() {
     if (isManualMode && manualCards.length === 0) return setError('Please add at least one flashcard');
 
     setLoading(true);
+    setLoadingMessage('Preparing files...');
     setError('');
 
     try {
@@ -59,10 +62,12 @@ function CreateFlashcardSet() {
       if (isManualMode) {
         cards = manualCards;
       } else {
+        setLoadingMessage('Analyzing content with AI...');
         const formData = new FormData();
         selectedFiles.forEach(file => formData.append('files', file));
-        const response = await api.uploadFiles(formData, token);
+        const response = await api.uploadFiles(formData, token, { backLanguage });
         cards = response.flashcards;
+        setLoadingMessage('Creating flashcard set...');
       }
       
       await api.createFlashcardSet({ title, description, cards }, token);
@@ -71,6 +76,7 @@ function CreateFlashcardSet() {
       setError(err.message || 'Failed to create flashcard set');
     } finally {
       setLoading(false);
+      setLoadingMessage('');
     }
   };
 
@@ -108,6 +114,20 @@ function CreateFlashcardSet() {
               className="input resize-none"
               placeholder="Add a description..."
             />
+          </div>
+
+          {/* Language Selector */}
+          <div>
+            <label htmlFor="backLanguage" className="input-label">Translation Language</label>
+            <select
+              id="backLanguage"
+              value={backLanguage}
+              onChange={(e) => setBackLanguage(e.target.value)}
+              className="input"
+            >
+              <option value="english">English</option>
+              <option value="vietnamese">Tiếng Việt</option>
+            </select>
           </div>
 
           {/* Mode Toggle */}
@@ -223,9 +243,16 @@ function CreateFlashcardSet() {
           <button
             type="submit"
             disabled={loading}
-            className="btn-primary w-full"
+            className="btn-primary w-full flex items-center justify-center gap-2"
           >
-            {loading ? <span className="spinner" /> : 'Create Set'}
+            {loading ? (
+              <>
+                <span className="spinner" />
+                <span>{loadingMessage || 'Processing...'}</span>
+              </>
+            ) : (
+              'Create Set'
+            )}
           </button>
         </form>
       </div>

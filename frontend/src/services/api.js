@@ -53,7 +53,12 @@ export const api = {
     return response.json();
   },
 
-  async uploadFiles(formData, token) {
+  async uploadFiles(formData, token, options = {}) {
+    // Append back_language to form data if provided
+    if (options.backLanguage) {
+      formData.append('back_language', options.backLanguage);
+    }
+    
     const response = await fetch(`${API_BASE}/upload`, {
       method: 'POST',
       headers: {
