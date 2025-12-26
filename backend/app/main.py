@@ -1,10 +1,15 @@
 import os
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from .api.routers import auth, flashcards, upload, reviews
 
 app = FastAPI(title="Flashcard Maker API", version="1.0.0")
+
+# Trust proxy headers (X-Forwarded-Proto, X-Forwarded-For)
+# This ensures HTTPS is preserved in redirects when behind Koyeb's proxy
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=["*"])
 
 allowed_origins = os.getenv(
     "ALLOWED_ORIGINS",
@@ -19,6 +24,7 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["*"],
 )
+
 
 api_router = APIRouter(prefix="/v1")
 api_router.include_router(auth.router)
