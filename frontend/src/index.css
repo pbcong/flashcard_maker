@@ -123,6 +123,19 @@
   50% { opacity: 0.8; transform: scale(1.05); }
 }
 
+/* Animation utility classes */
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+.animate-swing {
+  animation: swing 3s ease-in-out infinite;
+}
+
+.animate-sparkle {
+  animation: sparkle 2s ease-in-out infinite;
+}
+
 @layer base {
   body {
     background-color: var(--bg-primary);
