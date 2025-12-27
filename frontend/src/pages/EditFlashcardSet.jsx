@@ -104,7 +104,7 @@ function EditFlashcardSet() {
               <span className="text-sm font-medium text-neutral-700">Cards ({cards.length})</span>
               <button
                 type="button"
-                onClick={() => setCards([...cards, { front: '', back: '' }])}
+                onClick={() => setCards([{ front: '', back: '' }, ...cards])}
                 className="btn-secondary text-sm"
               >
                 + Add Card
