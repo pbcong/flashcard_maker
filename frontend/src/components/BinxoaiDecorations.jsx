@@ -5,7 +5,7 @@ import chihuahua from '../assets/pngtree-chihuahua-in-studio-white-background-pn
 import bow1 from '../assets/5bbc29b680c91-ba18fde322d103cab50c0424b742bdcb.png';
 import bow2 from '../assets/hm8vslat6ll8tqd1mj790ouoh2-4b0c8179cd5a99c2d7044d6d4f036147.png';
 
-// Chihuahua positions - positioned at edges to not be covered by content
+// Chihuahua positions - positioned at edges
 const chihuahuaPositions = [
   { top: '80px', left: '10px', size: 80, delay: 0, rotate: -10 },
   { top: '150px', right: '15px', size: 70, delay: 0.5, rotate: 15 },
@@ -27,9 +27,9 @@ const bowPositions = [
   { bottom: '300px', right: '60px', size: 42, delay: 0.8, rotate: -15, image: bow2 },
 ];
 
-// Emoji decorations - positioned at edges, higher opacity
+// Emoji decorations
 const emojiDecorations = [
-  // Stars - bright yellow, visible against pink
+  // Stars
   { emoji: '⭐', top: '90px', left: '100px', size: 28, delay: 0 },
   { emoji: '⭐', top: '180px', right: '120px', size: 24, delay: 0.5 },
   { emoji: '⭐', top: '380px', left: '80px', size: 26, delay: 1 },
@@ -73,87 +73,81 @@ function BinxoaiDecorations() {
   if (theme !== 'binxoai') return null;
   
   return (
-    <>
-      {/* Background layer - behind content */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        {/* Floating ribbon trail at bottom */}
-        <div 
-          className="absolute bottom-0 left-0 right-0 h-20 opacity-40"
+    <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 9999 }}>
+      {/* Scattered chihuahuas */}
+      {chihuahuaPositions.map((pos, index) => (
+        <img
+          key={`chi-${index}`}
+          src={chihuahua}
+          alt=""
+          className="absolute animate-float"
           style={{
-            background: 'linear-gradient(90deg, transparent, #ffb6c1, #ffc0cb, #ffb6c1, transparent)',
-            animation: 'shimmer 3s ease-in-out infinite',
+            top: pos.top,
+            left: pos.left,
+            right: pos.right,
+            bottom: pos.bottom,
+            width: pos.size,
+            height: pos.size,
+            objectFit: 'contain',
+            transform: `rotate(${pos.rotate}deg)`,
+            animationDelay: `${pos.delay}s`,
+            opacity: 0.7,
+            filter: 'drop-shadow(2px 2px 4px rgba(0,0,0,0.1))',
           }}
         />
-      </div>
+      ))}
       
-      {/* Foreground layer - above content, at edges */}
-      <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
-        {/* Scattered chihuahuas */}
-        {chihuahuaPositions.map((pos, index) => (
-          <img
-            key={`chi-${index}`}
-            src={chihuahua}
-            alt=""
-            className="absolute animate-float"
-            style={{
-              top: pos.top,
-              left: pos.left,
-              right: pos.right,
-              bottom: pos.bottom,
-              width: pos.size,
-              height: pos.size,
-              objectFit: 'contain',
-              transform: `rotate(${pos.rotate}deg)`,
-              animationDelay: `${pos.delay}s`,
-              opacity: 0.7,
-              filter: 'drop-shadow(2px 2px 4px rgba(0,0,0,0.1))',
-            }}
-          />
-        ))}
-        
-        {/* Scattered bows */}
-        {bowPositions.map((pos, index) => (
-          <img
-            key={`bow-${index}`}
-            src={pos.image}
-            alt=""
-            className="absolute animate-swing"
-            style={{
-              top: pos.top,
-              left: pos.left,
-              right: pos.right,
-              bottom: pos.bottom,
-              width: pos.size,
-              height: pos.size,
-              objectFit: 'contain',
-              transform: `rotate(${pos.rotate}deg)`,
-              animationDelay: `${pos.delay}s`,
-              opacity: 0.8,
-            }}
-          />
-        ))}
-        
-        {/* Emoji decorations - stars, moons, sparkles, hearts */}
-        {emojiDecorations.map((dec, index) => (
-          <div
-            key={`emoji-${index}`}
-            className="absolute animate-sparkle"
-            style={{
-              top: dec.top,
-              left: dec.left,
-              right: dec.right,
-              bottom: dec.bottom,
-              fontSize: dec.size,
-              opacity: 0.9,
-              animationDelay: `${dec.delay}s`,
-              textShadow: '1px 1px 2px rgba(0,0,0,0.1)',
-            }}
-          >
-            {dec.emoji}
-          </div>
-        ))}
-      </div>
-    </>
+      {/* Scattered bows */}
+      {bowPositions.map((pos, index) => (
+        <img
+          key={`bow-${index}`}
+          src={pos.image}
+          alt=""
+          className="absolute animate-swing"
+          style={{
+            top: pos.top,
+            left: pos.left,
+            right: pos.right,
+            bottom: pos.bottom,
+            width: pos.size,
+            height: pos.size,
+            objectFit: 'contain',
+            transform: `rotate(${pos.rotate}deg)`,
+            animationDelay: `${pos.delay}s`,
+            opacity: 0.8,
+          }}
+        />
+      ))}
+      
+      {/* Emoji decorations */}
+      {emojiDecorations.map((dec, index) => (
+        <div
+          key={`emoji-${index}`}
+          className="absolute animate-sparkle"
+          style={{
+            top: dec.top,
+            left: dec.left,
+            right: dec.right,
+            bottom: dec.bottom,
+            fontSize: dec.size,
+            opacity: 0.9,
+            animationDelay: `${dec.delay}s`,
+            textShadow: '1px 1px 2px rgba(0,0,0,0.1)',
+          }}
+        >
+          {dec.emoji}
+        </div>
+      ))}
+      
+      {/* Floating ribbon trail at bottom */}
+      <div 
+        className="absolute bottom-0 left-0 right-0 h-20 opacity-40"
+        style={{
+          background: 'linear-gradient(90deg, transparent, #ffb6c1, #ffc0cb, #ffb6c1, transparent)',
+          animation: 'shimmer 3s ease-in-out infinite',
+        }}
+      />
+    </div>
   );
 }
 

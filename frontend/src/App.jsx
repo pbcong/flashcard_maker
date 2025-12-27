@@ -7,9 +7,11 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <BinxoaiDecorations />
-        <div className="min-h-screen app-bg relative z-10">
-          <AppRouter />
+        <div className="min-h-screen app-bg relative">
+          <BinxoaiDecorations />
+          <div className="relative z-10">
+            <AppRouter />
+          </div>
         </div>
       </AuthProvider>
     </ThemeProvider>
