@@ -2,9 +2,90 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Theme Variables */
+:root {
+  /* Minimal Theme (default) */
+  --bg-primary: #fafafa;
+  --bg-secondary: #ffffff;
+  --bg-accent: #f5f5f5;
+  --text-primary: #171717;
+  --text-secondary: #525252;
+  --text-muted: #a3a3a3;
+  --border-color: #e5e5e5;
+  --accent-color: #171717;
+  --accent-hover: #404040;
+  --btn-secondary-bg: #f5f5f5;
+  --btn-secondary-text: #525252;
+  --card-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  --card-shadow-hover: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.theme-binxoai {
+  /* Binxoai Pastel Pink Theme */
+  --bg-primary: #FFF0F5;
+  --bg-secondary: #ffffff;
+  --bg-accent: #FFE4EC;
+  --text-primary: #4a3f47;
+  --text-secondary: #6b5c63;
+  --text-muted: #9b8c93;
+  --border-color: #FFCCE0;
+  --accent-color: #ff85a2;
+  --accent-hover: #ff6b8a;
+  --btn-secondary-bg: #FFE4EC;
+  --btn-secondary-text: #6b5c63;
+  --card-shadow: 0 2px 8px rgba(255,133,162,0.15);
+  --card-shadow-hover: 0 6px 20px rgba(255,133,162,0.25);
+}
+
+/* Decorations for Binxoai Theme */
+.theme-binxoai .app-bg {
+  background: linear-gradient(135deg, #FFF0F5 0%, #FFE4EC 50%, #E8F4FF 100%);
+  position: relative;
+}
+
+.theme-binxoai .app-bg::before {
+  content: "🐕 ✨ 🎀 🌙 ⭐ 🐕 🎀 ✨ 🌙 ⭐ 🐕 🎀";
+  position: fixed;
+  top: 80px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 1.2rem;
+  opacity: 0.4;
+  pointer-events: none;
+  letter-spacing: 20px;
+  z-index: 0;
+}
+
+.theme-binxoai .app-bg::after {
+  content: "⭐ 🎀 🐕 ✨ 🌙 ⭐ 🎀 🐕 ✨ 🌙 ⭐ 🎀";
+  position: fixed;
+  bottom: 20px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 1.2rem;
+  opacity: 0.4;
+  pointer-events: none;
+  letter-spacing: 20px;
+  z-index: 0;
+}
+
+/* Floating decorations for binxoai */
+.theme-binxoai .card::before {
+  content: "🎀";
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  font-size: 1.5rem;
+  z-index: 10;
+}
+
 @layer base {
   body {
-    @apply bg-neutral-50 text-neutral-900 antialiased;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    @apply antialiased;
     padding-top: 64px;
   }
 
@@ -14,21 +95,41 @@
 }
 
 @layer components {
+  .app-bg {
+    background-color: var(--bg-primary);
+    min-height: 100vh;
+  }
+
   /* Buttons */
   .btn {
     @apply inline-flex items-center justify-center px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .btn-primary {
-    @apply btn bg-neutral-900 text-white hover:bg-neutral-800 focus:ring-neutral-900;
+    @apply btn;
+    background-color: var(--accent-color);
+    color: white;
+  }
+  .btn-primary:hover {
+    background-color: var(--accent-hover);
   }
 
   .btn-secondary {
-    @apply btn bg-neutral-100 text-neutral-700 hover:bg-neutral-200 focus:ring-neutral-400;
+    @apply btn;
+    background-color: var(--btn-secondary-bg);
+    color: var(--btn-secondary-text);
+  }
+  .btn-secondary:hover {
+    opacity: 0.8;
   }
 
   .btn-ghost {
-    @apply btn bg-transparent text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 focus:ring-neutral-400;
+    @apply btn bg-transparent;
+    color: var(--text-secondary);
+  }
+  .btn-ghost:hover {
+    background-color: var(--bg-accent);
+    color: var(--text-primary);
   }
 
   .btn-danger {
@@ -37,20 +138,38 @@
 
   /* Form Inputs */
   .input {
-    @apply w-full px-3 py-2.5 bg-white border border-neutral-200 rounded-lg text-sm placeholder-neutral-400 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent;
+    @apply w-full px-3 py-2.5 rounded-lg text-sm transition-all duration-150 focus:outline-none focus:ring-2;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+  }
+  .input::placeholder {
+    color: var(--text-muted);
+  }
+  .input:focus {
+    border-color: var(--accent-color);
+    --tw-ring-color: var(--accent-color);
   }
 
   .input-label {
-    @apply block text-sm font-medium text-neutral-700 mb-1.5;
+    @apply block text-sm font-medium mb-1.5;
+    color: var(--text-secondary);
   }
 
   /* Cards */
   .card {
-    @apply bg-white rounded-xl shadow-card overflow-hidden;
+    background-color: var(--bg-secondary);
+    border-radius: 0.75rem;
+    box-shadow: var(--card-shadow);
+    overflow: hidden;
+    position: relative;
   }
 
   .card-hover {
-    @apply card transition-shadow duration-200 hover:shadow-hover;
+    @apply card transition-shadow duration-200;
+  }
+  .card-hover:hover {
+    box-shadow: var(--card-shadow-hover);
   }
 
   /* Alerts */
@@ -68,16 +187,31 @@
 
   /* Loading Spinner */
   .spinner {
-    @apply w-5 h-5 border-2 border-neutral-200 border-t-neutral-900 rounded-full animate-spin;
+    @apply w-5 h-5 border-2 rounded-full animate-spin;
+    border-color: var(--border-color);
+    border-top-color: var(--accent-color);
   }
 
   /* Progress Bar */
   .progress-bar {
-    @apply h-1.5 bg-neutral-100 rounded-full overflow-hidden;
+    @apply h-1.5 rounded-full overflow-hidden;
+    background-color: var(--bg-accent);
   }
 
   .progress-fill {
-    @apply h-full bg-neutral-900 rounded-full transition-all duration-300;
+    @apply h-full rounded-full transition-all duration-300;
+    background-color: var(--accent-color);
+  }
+
+  /* Theme Toggle Button */
+  .theme-toggle {
+    @apply fixed bottom-4 right-4 z-50 p-3 rounded-full shadow-lg cursor-pointer transition-all;
+    background-color: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+  }
+  .theme-toggle:hover {
+    transform: scale(1.1);
+    box-shadow: var(--card-shadow-hover);
   }
 }
 
@@ -96,6 +230,18 @@
 
   .rotate-y-180 {
     transform: rotateY(180deg);
+  }
+  
+  .text-primary {
+    color: var(--text-primary);
+  }
+  
+  .text-secondary {
+    color: var(--text-secondary);
+  }
+  
+  .text-muted {
+    color: var(--text-muted);
   }
 }
 
@@ -121,4 +267,29 @@
 
 .flashcard-back {
   transform: rotateY(180deg);
+}
+
+/* Binxoai Theme Specific Animations */
+.theme-binxoai .card {
+  border: 2px solid var(--border-color);
+}
+
+.theme-binxoai .btn-primary {
+  background: linear-gradient(135deg, #ff85a2 0%, #ffb6c1 100%);
+  box-shadow: 0 4px 15px rgba(255,133,162,0.3);
+}
+
+.theme-binxoai .btn-primary:hover {
+  background: linear-gradient(135deg, #ff6b8a 0%, #ff9fb3 100%);
+}
+
+/* Cute sparkle animation for binxoai */
+@keyframes sparkle {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.1); }
+}
+
+.theme-binxoai .app-bg::before,
+.theme-binxoai .app-bg::after {
+  animation: sparkle 3s ease-in-out infinite;
 }
