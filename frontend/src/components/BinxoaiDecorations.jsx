@@ -77,7 +77,7 @@ function BinxoaiDecorations() {
   if (theme !== 'binxoai') return null;
   
   return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 9999 }}>
+    <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
       {allDecorations.map((dec, index) => {
         const delay = (index * 0.15) % 3; // Staggered animation delays
         
