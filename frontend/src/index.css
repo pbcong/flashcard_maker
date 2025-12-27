@@ -41,44 +41,86 @@
 .theme-binxoai .app-bg {
   background: linear-gradient(135deg, #FFF0F5 0%, #FFE4EC 50%, #E8F4FF 100%);
   position: relative;
+  overflow-x: hidden;
 }
 
+/* Chihuahua decoration - bottom left */
 .theme-binxoai .app-bg::before {
-  content: "🐕 ✨ 🎀 🌙 ⭐ 🐕 🎀 ✨ 🌙 ⭐ 🐕 🎀";
-  position: fixed;
-  top: 80px;
-  left: 0;
-  right: 0;
-  text-align: center;
-  font-size: 1.2rem;
-  opacity: 0.4;
-  pointer-events: none;
-  letter-spacing: 20px;
-  z-index: 0;
-}
-
-.theme-binxoai .app-bg::after {
-  content: "⭐ 🎀 🐕 ✨ 🌙 ⭐ 🎀 🐕 ✨ 🌙 ⭐ 🎀";
+  content: "";
   position: fixed;
   bottom: 20px;
-  left: 0;
-  right: 0;
-  text-align: center;
-  font-size: 1.2rem;
-  opacity: 0.4;
+  left: 20px;
+  width: 120px;
+  height: 120px;
+  background-image: url('/src/assets/pngtree-chihuahua-in-studio-white-background-png-image_11207730.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  opacity: 0.6;
   pointer-events: none;
-  letter-spacing: 20px;
+  z-index: 0;
+  animation: float 4s ease-in-out infinite;
+}
+
+/* Bow decoration - top right */
+.theme-binxoai .app-bg::after {
+  content: "";
+  position: fixed;
+  top: 80px;
+  right: 30px;
+  width: 80px;
+  height: 80px;
+  background-image: url('/src/assets/5bbc29b680c91-ba18fde322d103cab50c0424b742bdcb.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  opacity: 0.7;
+  pointer-events: none;
+  z-index: 0;
+  animation: swing 3s ease-in-out infinite;
+}
+
+/* Floating decorations container */
+.binxoai-decorations {
+  position: fixed;
+  pointer-events: none;
   z-index: 0;
 }
 
-/* Floating decorations for binxoai */
+/* Card bow decoration */
+.theme-binxoai .card {
+  position: relative;
+}
+
 .theme-binxoai .card::before {
-  content: "🎀";
+  content: "";
   position: absolute;
-  top: -8px;
-  right: -8px;
-  font-size: 1.5rem;
+  top: -15px;
+  right: -15px;
+  width: 50px;
+  height: 50px;
+  background-image: url('/src/assets/hm8vslat6ll8tqd1mj790ouoh2-4b0c8179cd5a99c2d7044d6d4f036147.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
   z-index: 10;
+  transform: rotate(15deg);
+}
+
+/* Animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(-5deg); }
+  50% { transform: translateY(-15px) rotate(5deg); }
+}
+
+@keyframes swing {
+  0%, 100% { transform: rotate(-10deg); }
+  50% { transform: rotate(10deg); }
+}
+
+@keyframes sparkle {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
 }
 
 @layer base {
@@ -161,8 +203,7 @@
     background-color: var(--bg-secondary);
     border-radius: 0.75rem;
     box-shadow: var(--card-shadow);
-    overflow: hidden;
-    position: relative;
+    overflow: visible;
   }
 
   .card-hover {
@@ -269,7 +310,7 @@
   transform: rotateY(180deg);
 }
 
-/* Binxoai Theme Specific Animations */
+/* Binxoai Theme Enhancements */
 .theme-binxoai .card {
   border: 2px solid var(--border-color);
 }
@@ -283,13 +324,12 @@
   background: linear-gradient(135deg, #ff6b8a 0%, #ff9fb3 100%);
 }
 
-/* Cute sparkle animation for binxoai */
-@keyframes sparkle {
-  0%, 100% { opacity: 0.4; transform: scale(1); }
-  50% { opacity: 0.8; transform: scale(1.1); }
-}
-
-.theme-binxoai .app-bg::before,
-.theme-binxoai .app-bg::after {
-  animation: sparkle 3s ease-in-out infinite;
+/* Stars and moon decorations */
+.theme-binxoai .navbar-stars::before {
+  content: "✨ ⭐ 🌙 ✨";
+  position: absolute;
+  right: 100%;
+  margin-right: 10px;
+  opacity: 0.7;
+  animation: sparkle 2s ease-in-out infinite;
 }
