@@ -136,6 +136,15 @@
   animation: sparkle 2s ease-in-out infinite;
 }
 
+@keyframes shimmer {
+  0%, 100% { opacity: 0.2; transform: translateX(-10%); }
+  50% { opacity: 0.4; transform: translateX(10%); }
+}
+
+.animate-shimmer {
+  animation: shimmer 3s ease-in-out infinite;
+}
+
 @layer base {
   body {
     background-color: var(--bg-primary);
