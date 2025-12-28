@@ -2,39 +2,45 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Theme Variables */
+/* Theme Variables - Liquid Glass Style */
 :root {
-  /* Minimal Theme (default) */
-  --bg-primary: #fafafa;
-  --bg-secondary: #ffffff;
-  --bg-accent: #f5f5f5;
-  --text-primary: #171717;
-  --text-secondary: #525252;
-  --text-muted: #a3a3a3;
-  --border-color: #e5e5e5;
-  --accent-color: #171717;
-  --accent-hover: #404040;
-  --btn-secondary-bg: #f5f5f5;
-  --btn-secondary-text: #525252;
-  --card-shadow: 0 1px 3px rgba(0,0,0,0.08);
-  --card-shadow-hover: 0 4px 12px rgba(0,0,0,0.1);
+  /* Minimal Theme (default) - Liquid Glass */
+  --bg-primary: #f8f9fa;
+  --bg-secondary: rgba(255, 255, 255, 0.72);
+  --bg-accent: rgba(0, 0, 0, 0.04);
+  --bg-glass: rgba(255, 255, 255, 0.65);
+  --text-primary: #1a1a1a;
+  --text-secondary: #555555;
+  --text-muted: #999999;
+  --border-color: rgba(0, 0, 0, 0.08);
+  --border-glass: rgba(255, 255, 255, 0.5);
+  --accent-color: #007aff;
+  --accent-hover: #0056b3;
+  --btn-secondary-bg: rgba(0, 0, 0, 0.05);
+  --btn-secondary-text: #555555;
+  --card-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
+  --card-shadow-hover: 0 8px 32px rgba(0, 0, 0, 0.12);
+  --glass-blur: 20px;
 }
 
 .theme-binxoai {
-  /* Binxoai Pastel Pink Theme */
-  --bg-primary: #FFF0F5;
-  --bg-secondary: #ffffff;
-  --bg-accent: #FFE4EC;
+  /* Binxoai Pastel Pink Theme - Liquid Glass */
+  --bg-primary: linear-gradient(135deg, #FFF0F5 0%, #FFE4EC 50%, #E8F4FF 100%);
+  --bg-secondary: rgba(255, 255, 255, 0.65);
+  --bg-accent: rgba(255, 182, 193, 0.15);
+  --bg-glass: rgba(255, 240, 245, 0.7);
   --text-primary: #4a3f47;
   --text-secondary: #6b5c63;
   --text-muted: #9b8c93;
-  --border-color: #FFCCE0;
+  --border-color: rgba(255, 133, 162, 0.2);
+  --border-glass: rgba(255, 255, 255, 0.6);
   --accent-color: #ff85a2;
   --accent-hover: #ff6b8a;
-  --btn-secondary-bg: #FFE4EC;
+  --btn-secondary-bg: rgba(255, 182, 193, 0.2);
   --btn-secondary-text: #6b5c63;
-  --card-shadow: 0 2px 8px rgba(255,133,162,0.15);
-  --card-shadow-hover: 0 6px 20px rgba(255,133,162,0.25);
+  --card-shadow: 0 4px 24px rgba(255, 133, 162, 0.12);
+  --card-shadow-hover: 0 8px 40px rgba(255, 133, 162, 0.2);
+  --glass-blur: 24px;
 }
 
 /* Decorations for Binxoai Theme */
@@ -52,7 +58,7 @@
   left: 20px;
   width: 120px;
   height: 120px;
-  background-image: url('/src/assets/pngtree-chihuahua-in-studio-white-background-png-image_11207730.png');
+  background-image: url('/src/assets/chihuahua1.png');
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
@@ -70,7 +76,7 @@
   right: 30px;
   width: 80px;
   height: 80px;
-  background-image: url('/src/assets/5bbc29b680c91-ba18fde322d103cab50c0424b742bdcb.png');
+  background-image: url('/src/assets/chihuahua2.png');
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
@@ -99,7 +105,7 @@
   right: -15px;
   width: 50px;
   height: 50px;
-  background-image: url('/src/assets/hm8vslat6ll8tqd1mj790ouoh2-4b0c8179cd5a99c2d7044d6d4f036147.png');
+  background-image: url('/src/assets/chihuahua3.png');
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
@@ -145,6 +151,84 @@
   animation: shimmer 3s ease-in-out infinite;
 }
 
+/* iOS-style Page Transitions */
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutToLeft {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.page-transition {
+  animation-duration: 0.25s;
+  animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  animation-fill-mode: both;
+}
+
+.page-enter {
+  animation-name: slideInFromRight;
+}
+
+.page-exit {
+  animation-name: slideOutToLeft;
+}
+
+/* Card Sliding Animations (fast for UX) */
+@keyframes cardSlideOutLeft {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-40px);
+  }
+}
+
+@keyframes cardSlideOutRight {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+}
+
+.card-slide-left {
+  animation: cardSlideOutLeft 0.12s ease-out forwards;
+}
+
+.card-slide-right {
+  animation: cardSlideOutRight 0.12s ease-out forwards;
+}
+
 @layer base {
   body {
     background-color: var(--bg-primary);
@@ -164,27 +248,33 @@
     min-height: 100vh;
   }
 
-  /* Buttons */
+  /* Buttons - Liquid Glass */
   .btn {
-    @apply inline-flex items-center justify-center px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center px-5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .btn-primary {
     @apply btn;
-    background-color: var(--accent-color);
+    background: var(--accent-color);
     color: white;
+    box-shadow: 0 2px 12px rgba(0, 122, 255, 0.25);
   }
   .btn-primary:hover {
-    background-color: var(--accent-hover);
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(0, 122, 255, 0.35);
   }
 
   .btn-secondary {
     @apply btn;
-    background-color: var(--btn-secondary-bg);
+    background: var(--btn-secondary-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     color: var(--btn-secondary-text);
+    border: 1px solid var(--border-color);
   }
   .btn-secondary:hover {
-    opacity: 0.8;
+    background: var(--bg-accent);
   }
 
   .btn-ghost {
@@ -192,7 +282,7 @@
     color: var(--text-secondary);
   }
   .btn-ghost:hover {
-    background-color: var(--bg-accent);
+    background: var(--bg-accent);
     color: var(--text-primary);
   }
 
@@ -200,10 +290,12 @@
     @apply btn bg-red-500 text-white hover:bg-red-600 focus:ring-red-500;
   }
 
-  /* Form Inputs */
+  /* Form Inputs - Liquid Glass */
   .input {
-    @apply w-full px-3 py-2.5 rounded-lg text-sm transition-all duration-150 focus:outline-none focus:ring-2;
-    background-color: var(--bg-secondary);
+    @apply w-full px-4 py-3 rounded-xl text-sm transition-all duration-200 focus:outline-none;
+    background: var(--bg-secondary);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--border-color);
     color: var(--text-primary);
   }
@@ -212,7 +304,7 @@
   }
   .input:focus {
     border-color: var(--accent-color);
-    --tw-ring-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
   }
 
   .input-label {
@@ -220,19 +312,23 @@
     color: var(--text-secondary);
   }
 
-  /* Cards */
+  /* Cards - Liquid Glass */
   .card {
-    background-color: var(--bg-secondary);
-    border-radius: 0.75rem;
+    background: var(--bg-secondary);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border-radius: 1rem;
+    border: 1px solid var(--border-glass);
     box-shadow: var(--card-shadow);
     overflow: visible;
   }
 
   .card-hover {
-    @apply card transition-shadow duration-200;
+    @apply card transition-all duration-200;
   }
   .card-hover:hover {
     box-shadow: var(--card-shadow-hover);
+    transform: translateY(-2px);
   }
 
   /* Alerts */
@@ -354,4 +450,174 @@
   margin-right: 10px;
   opacity: 0.7;
   animation: sparkle 2s ease-in-out infinite;
+}
+
+/* ========================================
+   LIQUID GLASS EFFECTS - iOS 26 Inspired
+   ======================================== */
+
+/* Shine animation - horizontal shimmer across glass */
+@keyframes glass-shine {
+  0% {
+    transform: translateX(-100%) skewX(-15deg);
+  }
+  100% {
+    transform: translateX(200%) skewX(-15deg);
+  }
+}
+
+/* Glow pulse animation */
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 
+      0 0 20px rgba(255, 255, 255, 0.1),
+      inset 0 0 20px rgba(255, 255, 255, 0.05);
+  }
+  50% {
+    box-shadow: 
+      0 0 30px rgba(255, 255, 255, 0.15),
+      inset 0 0 30px rgba(255, 255, 255, 0.08);
+  }
+}
+
+/* Base glass panel - enhanced glassmorphism */
+.glass-panel {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.7) 0%,
+    rgba(255, 255, 255, 0.5) 50%,
+    rgba(255, 255, 255, 0.6) 100%
+  );
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Glass shine overlay - animated light effect */
+.glass-shine::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 100%
+  );
+  width: 50%;
+  transform: translateX(-100%) skewX(-15deg);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.glass-shine:hover::before {
+  animation: glass-shine 0.8s ease-in-out;
+}
+
+/* Glass glow effect on hover */
+.glass-glow {
+  transition: all 0.3s ease;
+}
+
+.glass-glow:hover {
+  box-shadow: 
+    0 8px 40px rgba(0, 0, 0, 0.12),
+    0 4px 12px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 0 40px rgba(255, 255, 255, 0.1);
+}
+
+/* Navbar liquid glass enhancement */
+.navbar-glass {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.8) 0%,
+    rgba(255, 255, 255, 0.65) 100%
+  );
+  backdrop-filter: blur(30px) saturate(200%);
+  -webkit-backdrop-filter: blur(30px) saturate(200%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 
+    0 4px 30px rgba(0, 0, 0, 0.05),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* Card liquid glass style */
+.card-glass {
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.75) 0%,
+    rgba(255, 255, 255, 0.55) 100%
+  );
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 1.25rem;
+  box-shadow: 
+    0 10px 40px rgba(0, 0, 0, 0.08),
+    0 2px 10px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-glass:hover {
+  transform: translateY(-4px);
+  box-shadow: 
+    0 20px 50px rgba(0, 0, 0, 0.12),
+    0 8px 20px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+/* Input liquid glass style */
+.input-glass {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+  transition: all 0.2s ease;
+}
+
+.input-glass:focus {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: var(--accent-color);
+  box-shadow: 
+    0 0 0 3px rgba(0, 122, 255, 0.1),
+    inset 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+/* Binxoai theme liquid glass overrides */
+.theme-binxoai .glass-panel,
+.theme-binxoai .card-glass {
+  background: linear-gradient(
+    145deg,
+    rgba(255, 240, 245, 0.8) 0%,
+    rgba(255, 230, 240, 0.6) 100%
+  );
+  border-color: rgba(255, 182, 193, 0.3);
+  box-shadow: 
+    0 10px 40px rgba(255, 133, 162, 0.1),
+    0 2px 10px rgba(255, 133, 162, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.theme-binxoai .navbar-glass {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 240, 245, 0.85) 0%,
+    rgba(255, 230, 240, 0.7) 100%
+  );
+  border-bottom-color: rgba(255, 182, 193, 0.3);
 }

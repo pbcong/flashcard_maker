@@ -1,10 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { api } from '../services/api';
+import StudyModeToggle from '../components/StudyModeToggle';
+import MCQCard from '../components/MCQCard';
 
 function FlashcardSetView() {
   const { setId } = useParams()
+  const navigate = useNavigate()
   const [set, setSet] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -15,6 +18,10 @@ function FlashcardSetView() {
   const [editFront, setEditFront] = useState('')
   const [editBack, setEditBack] = useState('')
   const [saving, setSaving] = useState(false)
+  const [slideDirection, setSlideDirection] = useState(null) // 'left' or 'right'
+  const [studyMode, setStudyMode] = useState('flashcard') // 'flashcard' or 'mcq'
+  const [mcqCorrectCount, setMcqCorrectCount] = useState(0)
+  const [mcqCompleted, setMcqCompleted] = useState(false)
   const { token } = useAuth()
 
   const fetchSet = useCallback(async () => {
@@ -43,17 +50,25 @@ function FlashcardSetView() {
 
   const nextCard = () => {
     if (currentCardIndex < set.flashcards.length - 1) {
-      setCurrentCardIndex(currentCardIndex + 1)
-      setIsFlipped(false)
-      setIsEditing(false)
+      setSlideDirection('left')
+      setTimeout(() => {
+        setCurrentCardIndex(currentCardIndex + 1)
+        setIsFlipped(false)
+        setIsEditing(false)
+        setSlideDirection(null)
+      }, 120)
     }
   }
 
   const prevCard = () => {
     if (currentCardIndex > 0) {
-      setCurrentCardIndex(currentCardIndex - 1)
-      setIsFlipped(false)
-      setIsEditing(false)
+      setSlideDirection('right')
+      setTimeout(() => {
+        setCurrentCardIndex(currentCardIndex - 1)
+        setIsFlipped(false)
+        setIsEditing(false)
+        setSlideDirection(null)
+      }, 120)
     }
   }
 
@@ -151,6 +166,9 @@ function FlashcardSetView() {
         <div className="progress-fill" style={{ width: `${progress}%` }} />
       </div>
 
+      {/* Mode Toggle */}
+      <StudyModeToggle mode={studyMode} onModeChange={setStudyMode} />
+
       {/* Controls */}
       <div className="flex gap-2 mb-6">
         <button onClick={handleShuffle} className="btn-ghost text-sm">Shuffle</button>
@@ -209,43 +227,104 @@ function FlashcardSetView() {
         </div>
       )}
 
-      {/* Card */}
-      {!isEditing && (
+      {/* Card - Flashcard Mode */}
+      {!isEditing && studyMode === 'flashcard' && (
         <div
           onClick={() => setIsFlipped(!isFlipped)}
-          className="card p-8 min-h-[280px] flex items-center justify-center cursor-pointer mb-6"
+          className={`card-glass p-8 min-h-[280px] flex items-center justify-center cursor-pointer mb-6 ${
+            slideDirection === 'left' ? 'card-slide-left' : 
+            slideDirection === 'right' ? 'card-slide-right' : ''
+          }`}
         >
           <div className="text-center">
             {currentCard.image && (
               <img src={currentCard.image} alt="" className="max-h-32 mx-auto mb-4 rounded" />
             )}
-            <p className="text-xl text-neutral-800">
+            <p className="text-xl" style={{ color: 'var(--text-primary)' }}>
               {isFlipped ? currentCard.back : currentCard.front}
             </p>
             {!isFlipped && (
-              <p className="text-xs text-neutral-400 mt-4">Click to flip</p>
+              <p className="text-xs mt-4" style={{ color: 'var(--text-muted)' }}>Click to flip</p>
             )}
           </div>
         </div>
       )}
 
-      {/* Navigation */}
-      <div className="flex items-center justify-between">
-        <button
-          onClick={prevCard}
-          disabled={currentCardIndex === 0}
-          className="btn-ghost disabled:opacity-50"
-        >
-          ← Previous
-        </button>
-        <button
-          onClick={nextCard}
-          disabled={currentCardIndex === set.flashcards.length - 1}
-          className="btn-ghost disabled:opacity-50"
-        >
-          Next →
-        </button>
-      </div>
+      {/* Card - MCQ Mode */}
+      {!isEditing && studyMode === 'mcq' && !mcqCompleted && (
+        <div className="mb-6">
+          <MCQCard
+            card={currentCard}
+            allCards={set.flashcards}
+            currentIndex={currentCardIndex}
+            totalCards={set.flashcards.length}
+            onAnswer={(isCorrect) => {
+              if (isCorrect) {
+                setMcqCorrectCount(prev => prev + 1);
+              }
+            }}
+            onNext={() => {
+              if (currentCardIndex < set.flashcards.length - 1) {
+                setCurrentCardIndex(currentCardIndex + 1);
+              } else {
+                // Finished all cards - show completion screen
+                setMcqCompleted(true);
+              }
+            }}
+          />
+        </div>
+      )}
+
+      {/* MCQ Completion Screen */}
+      {studyMode === 'mcq' && mcqCompleted && (
+        <div className="card-glass p-8 text-center mb-6">
+          <div className="text-5xl mb-4">🎉</div>
+          <h2 className="text-2xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+            Quiz Complete!
+          </h2>
+          <p className="text-lg mb-6" style={{ color: 'var(--text-secondary)' }}>
+            You got <span className="font-bold" style={{ color: 'var(--accent-color)' }}>{mcqCorrectCount}</span> out of <span className="font-bold">{set.flashcards.length}</span> correct
+          </p>
+          <div className="flex flex-col gap-3 items-center">
+            <button
+              onClick={() => {
+                setCurrentCardIndex(0);
+                setMcqCorrectCount(0);
+                setMcqCompleted(false);
+              }}
+              className="btn-primary"
+            >
+              Study Again
+            </button>
+            <button
+              onClick={() => navigate('/')}
+              className="btn-secondary"
+            >
+              Back to Home
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Navigation - Only in Flashcard Mode */}
+      {studyMode === 'flashcard' && (
+        <div className="flex items-center justify-between">
+          <button
+            onClick={prevCard}
+            disabled={currentCardIndex === 0}
+            className="btn-ghost disabled:opacity-50"
+          >
+            ← Previous
+          </button>
+          <button
+            onClick={nextCard}
+            disabled={currentCardIndex === set.flashcards.length - 1}
+            className="btn-ghost disabled:opacity-50"
+          >
+            Next →
+          </button>
+        </div>
+      )}
     </div>
   )
 }

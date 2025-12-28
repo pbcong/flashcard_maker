@@ -45,7 +45,7 @@ function Register() {
           </p>
         </div>
 
-        <div className="card p-6">
+        <div className="card-glass p-6">
           {error && (
             <div className="alert-error mb-4">
               {error}

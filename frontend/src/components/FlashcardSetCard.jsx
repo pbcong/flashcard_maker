@@ -7,7 +7,7 @@ function FlashcardSetCard({ set, handleDelete }) {
   const navigate = useNavigate();
 
   return (
-    <div className="card-hover flex flex-col h-full">
+    <div className="card-glass flex flex-col h-full">
       {/* Header */}
       <div className="p-5 flex-1">
         <div className="flex items-start justify-between mb-3">
@@ -19,7 +19,7 @@ function FlashcardSetCard({ set, handleDelete }) {
           <div className="relative">
             <button
               onClick={() => setShowMenu(!showMenu)}
-              className="p-1 -mr-1 rounded hover:bg-neutral-100 transition-colors"
+              className="p-1 -mr-1 rounded-lg hover:bg-black/5 transition-colors"
             >
               <svg className="w-5 h-5 text-neutral-400" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />

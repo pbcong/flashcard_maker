@@ -1,16 +1,20 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../contexts/ThemeContext';
+import logoImg from '../assets/chihuahua1.png';
 
 function Navbar() {
   const { logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <nav className="fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-md border-b z-50" style={{ borderColor: 'var(--border-color)' }}>
+    <nav 
+      className="fixed top-0 left-0 right-0 h-16 z-50 navbar-glass"
+    >
       <div className="max-w-6xl mx-auto px-4 h-full flex items-center justify-between">
-        <Link to="/" className="text-lg font-semibold hover:opacity-70 transition-opacity" style={{ color: 'var(--text-primary)' }}>
-          {theme === 'binxoai' ? '🎀 Flashcards 🐕' : 'Flashcards'}
+        <Link to="/" className="flex items-center gap-2 text-lg font-semibold hover:opacity-70 transition-opacity" style={{ color: 'var(--text-primary)' }}>
+          <img src={logoImg} alt="Flashy logo" className="w-8 h-8 object-contain" />
+          {theme === 'binxoai' ? '🎀 Flashy 🐕' : 'Flashy'}
         </Link>
 
         <div className="flex items-center gap-2">

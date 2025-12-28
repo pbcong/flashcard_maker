@@ -1,9 +1,9 @@
 import { useTheme } from '../contexts/ThemeContext';
 
 // Import images properly for Vite bundling
-import chihuahua from '../assets/pngtree-chihuahua-in-studio-white-background-png-image_11207730.png';
-import bow1 from '../assets/5bbc29b680c91-ba18fde322d103cab50c0424b742bdcb.png';
-import bow2 from '../assets/hm8vslat6ll8tqd1mj790ouoh2-4b0c8179cd5a99c2d7044d6d4f036147.png';
+import chihuahua from '../assets/chihuahua1.png';
+import bow1 from '../assets/chihuahua2.png';
+import bow2 from '../assets/chihuahua3.png';
 
 // Grid-based positions to avoid overlap (screen divided into zones)
 // Each zone is ~200x150px, decorations placed in different zones

@@ -12,5 +12,11 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
     },
+    // Fix HMR on Windows/WSL
+    watch: {
+      usePolling: true,
+      interval: 100,
+    },
   },
 })
+
