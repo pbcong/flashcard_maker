@@ -13,8 +13,8 @@ function Navbar() {
     >
       <div className="max-w-6xl mx-auto px-4 h-full flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2 text-lg font-semibold hover:opacity-70 transition-opacity" style={{ color: 'var(--text-primary)' }}>
-          <img src={logoImg} alt="Flashy logo" className="w-8 h-8 object-contain" />
-          {theme === 'binxoai' ? '🎀 Flashy 🐕' : 'Flashy'}
+          <img src={logoImg} alt="Flashy logo" className="w-12 h-12 object-contain" />
+          Flashy
         </Link>
 
         <div className="flex items-center gap-2">
